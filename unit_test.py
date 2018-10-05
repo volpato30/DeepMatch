@@ -41,10 +41,9 @@ class TestBatchScatterAdd(unittest.TestCase):
 
         output = tf.zeros((batch_size, M, hidden_size), dtype=tf.float32)
 
-        gathered_output = tf.batch_gather(params=output,
-                                          indices=resized_location_index)  # (batch, resize_location_index, hidden_size)
         update = resized_ion_hidden
-        self.output = batch_scatter_add(ref=output, indices=resized_location_index, updates=update, name='batch_scatter_add')
+        self.output = batch_scatter_add(ref=output, indices=resized_location_index, updates=update,
+                                        name='batch_scatter_add')
         self.final_output = tf.reduce_mean(self.output)
         self.gradient_to_hidden = tf.gradients(self.final_output, ion_hidden_represent)[0]
 

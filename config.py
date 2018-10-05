@@ -91,3 +91,10 @@ mass_AA = {'_PAD': 0.0,
 
 mass_ID = [mass_AA[vocab_reverse[x]] for x in range(vocab_size)]
 mass_AA_min = mass_AA["G"] # 57.02146
+
+save_dir = './train_dir'
+num_epochs = 20
+
+# piecewise constant learn rate
+boundaries = [500000]
+values = [1e-3, 1e-4]
