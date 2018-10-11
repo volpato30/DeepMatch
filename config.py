@@ -6,6 +6,10 @@ max_length = 15
 num_ion_combination = 18
 M = 4000  # contrast to the original paper, we let the discretized spectrum start from 0
 delta_M = 0.5
+max_mz = int(np.ceil(M * delta_M))
+resolution = 2
+
+assert delta_M * resolution == 1
 
 embed_dimension = 64  # A in the original paper
 lstm_output_dimension = 128  # F in the original paper

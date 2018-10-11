@@ -18,10 +18,21 @@ class TestCythonFunctions(unittest.TestCase):
         assert config.delta_M == 0.5
         # the expected_result is computed under the assumpt that delta_M is 0.5
         expected_result = [202, 165, 167, 146, 110, 111, 1802, 1765, 1767]
-        result_index = cython_func.get_ions_mz_index(1000, 100)
+        result_index = cython_func.get_ions_mz_index(peptide_mass, prefix_mass)
         for i, target in enumerate(expected_result):
             self.assertEqual(result_index[i], target, msg=f"left: {result_index[i]} not equal to "
                                                           f"right: {target}")
+
+    def test_process_spectrum(self):
+        mz_list = [103.2, 209.5]
+        intensity_list = [100.0, 1000.0]
+
+        spectrum_holder = cython_func.process_spectrum(mz_list, intensity_list)
+        spectrum_holder_expected = np.zeros(config.M)
+        spectrum_holder_expected[206] = 1. / 11
+        spectrum_holder_expected[419] = 10. / 11
+
+        self.assert_(np.allclose(spectrum_holder_expected, spectrum_holder))
 
 
 class TestBatchScatterAdd(unittest.TestCase):
