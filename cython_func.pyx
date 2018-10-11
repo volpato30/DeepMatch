@@ -56,3 +56,34 @@ def get_ions_mz_index(float peptide_mass, float prefix_mass):
     ions_index = np.floor(ions_mz / delta_M).astype(np.int32)  # the output can be negative or greater than M, masking in tensorflow graph
 
     return ions_index
+
+def process_spectrum(spectrum_mz_list, spectrum_intensity_list):
+    """transfer a list of peaks to a vector representation
+
+    returns:
+        a vector of length M
+    """
+
+    # neutral mass, location, assuming ion charge z=1
+    spectrum_mz = np.array(spectrum_mz_list, dtype=np.float32)
+    spectrum_mz_location = np.rint(spectrum_mz * config.resolution).astype(np.int32)
+    cdef int [:] spectrum_mz_location_view = spectrum_mz_location
+
+    # intensity
+    spectrum_intensity = np.array(spectrum_intensity_list, dtype=np.float32)
+
+    # spectrum_intensity_max = np.max(spectrum_intensity)
+    # norm_intensity = spectrum_intensity / spectrum_intensity_max
+    cdef float [:] norm_intensity_view = spectrum_intensity
+
+    # fill spectrum holders
+    spectrum_holder = np.zeros(shape=(config.M,), dtype=np.float32)
+    cdef float [:] spectrum_holder_view = spectrum_holder
+    # note that different peaks may fall into the same location, hence loop +=
+    cdef int index
+    for index in range(spectrum_mz_location.size):
+        spectrum_holder_view[spectrum_mz_location_view[index]] = spectrum_holder_view[spectrum_mz_location_view[index]] \
+                                                                 + norm_intensity_view[index]
+    spectrum_holder = spectrum_holder / np.sum(spectrum_holder)
+
+    return spectrum_holder

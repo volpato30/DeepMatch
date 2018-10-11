@@ -1,4 +1,6 @@
 import logging.config
+import tensorflow as tf
+import config
 from model import DeepMatchModel
 
 def main():
@@ -32,7 +34,19 @@ def main():
     }
     logging.config.dictConfig(d)
 
-    DeepMatchModel()
+    aa_sequence = tf.placeholder(tf.int64, shape=(None, config.peptide_max_length),
+                                                  name='aa_sequence_placeholder')
+    aa_sequence_length = tf.placeholder(tf.int64, shape=(None,),
+                                                         name='aa_sequence_length_placeholder')
+    ion_location_index = tf.placeholder(tf.int64,
+                                                        shape=(None, config.peptide_max_length - 1,
+                                                               config.num_ion_combination),
+                                                        name="ion_location_index_placeholder")
+    input_spectrum = tf.placeholder(tf.float32, shape=(None, config.M, 1),
+                                                     name='input_spectrum_placeholder')
+
+    model = DeepMatchModel(aa_sequence, aa_sequence_length, ion_location_index, input_spectrum)
+    print(f"output logits shape: {model.output_logits.get_shape()}")
 
 
 if __name__ == '__main__':

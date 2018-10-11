@@ -102,3 +102,7 @@ num_epochs = 20
 # piecewise constant learn rate
 boundaries = [500000]
 values = [1e-3, 1e-4]
+
+
+batch_size = 32
+inference_batch_size = 32
