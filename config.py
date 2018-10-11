@@ -2,7 +2,7 @@ import numpy as np
 import tensorflow as tf
 
 
-max_length = 15
+peptide_max_length = 12
 num_ion_combination = 18
 M = 4000  # contrast to the original paper, we let the discretized spectrum start from 0
 delta_M = 0.5
@@ -13,7 +13,9 @@ assert delta_M * resolution == 1
 
 embed_dimension = 64  # A in the original paper
 lstm_output_dimension = 128  # F in the original paper
-spectral_hidden_dimension = 128  # H in the original paper
+spectral_hidden_dimension = 64  # H in the original paper
+
+weight_decay = 1e-4
 
 _PAD = "_PAD"
 _START_VOCAB = [_PAD]
@@ -93,3 +95,10 @@ mass_AA = {'_PAD': 0.0,
 
 mass_ID = [mass_AA[vocab_reverse[x]] for x in range(vocab_size)]
 mass_AA_min = mass_AA["G"] # 57.02146
+
+save_dir = './train_dir'
+num_epochs = 20
+
+# piecewise constant learn rate
+boundaries = [500000]
+values = [1e-3, 1e-4]

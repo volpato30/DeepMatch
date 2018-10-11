@@ -132,7 +132,50 @@ def batch_scatter_add(ref, indices, updates, name=None):
         return scatter_add_tensor(
                 ref, final_indices, updates)
 
-def batch_scatter():
-    pass
+
+def batch_scatter(indices, updates, shape, name=None):
+    with ops.name_scope(name):
+        indices = ops.convert_to_tensor(indices, name="indices")
+        indices_shape = array_ops.shape(indices)
+        indices_dimensions = indices.get_shape().ndims
+
+        if indices_dimensions is None:
+            raise ValueError("batch_gather does not allow indices with unknown "
+                                             "shape.")
+
+        nd_indices = array_ops.expand_dims(indices, axis=-1)
+        nd_indices_list = []
+
+        # Scatter ND requires indices to have an additional dimension, in which the
+        # coordinates of the updated things are specified. For this to be adapted to
+        # the scatter_update with several leading dimensions, we simply make use of
+        # a tf.range for all the leading dimensions followed by concat of all the
+        # coordinates we created with the original indices.
+
+        # For example if indices.shape = [2, 3], we should generate the following
+        # indices for tf.scatter_nd_update:
+        # nd_indices[:, :, 0] = [[0, 0, 0], [1, 1, 1]]
+        # nd_indices[:, :, 1] = [[0, 1, 2], [0, 1, 2]]
+        # nd_indices[:, :, 2] = indices
+        for dimension in range(indices_dimensions - 1):
+            # In this loop we generate the following for the example (one for each
+            # iteration).
+            # nd_indices[:, :, 0] = [[0, 0, 0], [1, 1, 1]]
+            # nd_indices[:, :, 1] = [[0, 1, 2], [0, 1, 2]]
+            # This is done at every iteration with a tf.range over the size of the
+            # i-th dimension and using broadcasting over the desired shape.
+            dimension_size = indices_shape[dimension]
+            shape_to_broadcast = [1] * (indices_dimensions + 1)
+            shape_to_broadcast[dimension] = dimension_size
+            dimension_range = array_ops.reshape(
+                    gen_math_ops._range(0, dimension_size, 1), shape_to_broadcast)
+            if dimension_range.dtype.base_dtype != nd_indices.dtype:
+                dimension_range = gen_math_ops.cast(dimension_range, nd_indices.dtype)
+            nd_indices_list.append(
+                    dimension_range * array_ops.ones_like(nd_indices))
+        # Add the original indices at the end, as described above, and concat.
+        nd_indices_list.append(nd_indices)
+        final_indices = array_ops.concat(nd_indices_list, axis=-1)
+        return tf.scatter_nd(final_indices, updates, shape)
 
 
