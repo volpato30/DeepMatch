@@ -4,6 +4,7 @@ import re
 import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+import tensorflow as tf
 import config
 
 logger = logging.getLogger(__name__)
@@ -139,5 +140,67 @@ class InferenceParser(BaseParser):
         pass
 
 
+def parse_tfrecord(ex):
+    """
+    parse tf.train.Example protocolbuf
+    :param ex: serialized example
+    :return:
+    """
+    read_features = {
+        "input_spectrum": tf.FixedLenFeature([config.M], tf.float32),
+        "pos_aa_sequence": tf.FixedLenFeature([config.peptide_max_length], tf.int64),
+        "pos_aa_sequence_length": tf.FixedLenFeature([1], tf.int64),
+        "pos_ion_location_index": tf.FixedLenFeature([config.peptide_max_length - 1, config.num_ion_combination],
+                                                     tf.int64),
+
+        "neg_aa_sequence": tf.FixedLenFeature([config.num_neg_candidates, config.peptide_max_length], tf.int64),
+        "neg_aa_sequence_length": tf.FixedLenFeature([config.num_neg_candidates, 1], tf.int64),
+        "neg_ion_location_index": tf.FixedLenFeature([config.num_neg_candidates,
+                                                      config.peptide_max_length - 1,
+                                                      config.num_ion_combination],
+                                                     tf.int64),
+    }
+    parsed_data = tf.parse_single_example(serialized=ex, features=read_features)
+
+    return parsed_data
+
+
+def select_neg(x: dict):
+    x['neg_aa_sequence'] = x['neg_aa_sequence'][0, :]
+    x["neg_aa_sequence_length"] = x["neg_aa_sequence_length"][0, :]
+    x["neg_ion_location_index"] = x["neg_ion_location_index"][0, :, :]
+    return x
+
+
+def make_dataset(file_path: str, batch_size: int, num_processes=config.num_processes):
+    """
+    read tfrecord from hard drive and return an tf.data.Dataset object
+    :param file_path: path for tfrecord files
+    :return:
+    """
+    dataset = tf.data.TFRecordDataset([file_path])
+    dataset = dataset.map(parse_tfrecord, num_parallel_calls=num_processes)
+    dataset = dataset.map(select_neg, num_parallel_calls=num_processes)
+    # Shuffle the dataset
+    # dataset = dataset.shuffle(buffer_size=20)
+    dataset = dataset.batch(batch_size)
+
+    return dataset
+
+
 def prepare_dataset_iterators(batch_size: int):
-    pass
+    """
+
+    :param batch_size:
+    :return:
+    """
+    train_ds = make_dataset(config.train_record_path, batch_size)
+    valid_ds = make_dataset(config.valid_record_path, batch_size)
+
+    iterator = tf.data.Iterator.from_structure(train_ds.output_types, train_ds.output_shapes)
+    next_element = iterator.get_next()
+
+    training_init_op = iterator.make_initializer(train_ds)
+    validation_init_op = iterator.make_initializer(valid_ds)
+
+    return next_element, training_init_op, validation_init_op

@@ -99,10 +99,19 @@ mass_AA_min = mass_AA["G"] # 57.02146
 save_dir = './train_dir'
 num_epochs = 20
 
+num_neg_candidates = 4
+
+# tfrecord path
+train_record_path = './data/train.tfrecords'
+valid_record_path = './data/valid.tfrecords'
+
 # piecewise constant learn rate
 boundaries = [500000]
 values = [1e-3, 1e-4]
 
+keep_prob = 0.8
 
 batch_size = 32
 inference_batch_size = 32
+
+num_processes = 10
