@@ -135,5 +135,9 @@ class TestBatchScatter(unittest.TestCase):
             self.assert_(np.allclose(g, g_true))
 
 
+class TestReader(unittest.TestCase):
+    pass
+
+
 if __name__ == '__main__':
     unittest.main()

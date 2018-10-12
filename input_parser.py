@@ -15,38 +15,14 @@ class CandidatePeptide:
     peptide_str: str
     logp_score: str
 
+
 class BaseParser(ABC):
-    def __init__(self, mgf_file: str, feature_file: str):
+    def __init__(self, mgf_file: str):
         self.mgf_file = mgf_file
-        self.feature_file = feature_file
         self.feature_location_list = []
         self.spectrum_location_dict = {}
         self.input_spectrum_handle = open(self.mgf_file, 'r')
-        self.input_feature_handle = open(self.feature_file, 'r')
         self.get_location()
-
-    def _parse_feature(self, feature_location):
-        """read identified features and all candidate peptides"""
-
-        # ~ print("".join(["="] * 80)) # section-separating line
-        # ~ print("WorkerIO: _parse_feature()")
-
-        # self.input_feature_handle.seek(feature_location)
-        # line = self.input_feature_handle.readline()
-        # line = re.split(',|\r|\n', line)
-        # feature_id = line[deepnovo_config.col_feature_id]
-        # feature_area_str = line[deepnovo_config.col_feature_area]
-        # feature_area = float(feature_area_str) if feature_area_str else 0.0
-        # precursor_mz = float(line[deepnovo_config.col_precursor_mz])
-        # precursor_charge = float(line[deepnovo_config.col_precursor_charge])
-        # rt_mean = float(line[deepnovo_config.col_rt_mean])
-        # raw_sequence = line[deepnovo_config.col_raw_sequence]
-        # scan_list = re.split(';', line[deepnovo_config.col_scan_list])
-        # ms1_list = re.split(';', line[deepnovo_config.col_ms1_list])
-        # assert len(scan_list) == len(ms1_list), "Error: scan_list and ms1_list not matched."
-        #
-        # return feature_id, feature_area, precursor_mz, precursor_charge, rt_mean, raw_sequence, scan_list, ms1_list
-        pass
 
     def _parse_spectrum_ion(self):
         """parse peaks in the mgf file"""
@@ -90,11 +66,10 @@ class BaseParser(ABC):
             while line:
                 current_location = self.input_spectrum_handle.tell()
                 line = self.input_spectrum_handle.readline()
-                if "BEGIN IONS" in line:
+                if "Scan ID:" in line:
                     spectrum_location = current_location
-                elif "SCANS=" in line:
-                    scan = re.split("=|\r|\n", line)[1]
-                    spectrum_location_dict[scan] = spectrum_location
+                    scan = re.split("Scan ID: ", line)[1]
+                    spectrum_location_dict[scan] = current_location
 
             self.spectrum_location_dict = spectrum_location_dict
             self.spectrum_count = len(spectrum_location_dict)
@@ -103,20 +78,14 @@ class BaseParser(ABC):
             with open(spectrum_location_file, 'wb') as fw:
                 pickle.dump(self.spectrum_location_dict, fw)
 
-        ### store location of each feature for random access
-        feature_location_list = []
-        # skip header line
-        _ = self.input_feature_handle.readline()
-        line = True
-        while line:
-            feature_location = self.input_feature_handle.tell()
-            feature_location_list.append(feature_location)
-            line = self.input_feature_handle.readline()
-        feature_location_list = feature_location_list[:-1]  # the last line is EOS
-        self.feature_location_list = feature_location_list
-        logger.info(f"read {len(feature_location_list)} features")
-
-    def get_feature(self, feature_index: int):
+    def get_scan(self, scan: str):
+        self.input_spectrum_handle.seek(self.spectrum_location_dict[scan])
+        candidate_peptides_list = []
+        for line in self.input_spectrum_handle:
+            if "Name:" in line:
+                peptide_str = re.split("Name: ", line)[1]
+            elif "Comment:" in line:
+                pass
         pass
 
 
