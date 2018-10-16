@@ -35,6 +35,9 @@ class TestCythonFunctions(unittest.TestCase):
 
         self.assert_(np.allclose(spectrum_holder_expected, spectrum_holder))
 
+    def test_config_aa_mass(self):
+        self.assertAlmostEqual(config.mass_ID[config.vocab['K']], 128.09496)
+
 
 class TestBatchScatterAdd(unittest.TestCase):
     def setUp(self):
