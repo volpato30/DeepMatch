@@ -1,0 +1,7 @@
+data/
+build/
+.ipynb_checkpoints/
+*.c
+*.so
+*.pyc
+*.log

@@ -1,7 +1,6 @@
 import logging.config
 import tensorflow as tf
 import config
-from model import DeepMatchModel
 
 def main():
     log_file_name = 'deepMatch.log'
@@ -45,8 +44,8 @@ def main():
     input_spectrum = tf.placeholder(tf.float32, shape=(None, config.M, 1),
                                                      name='input_spectrum_placeholder')
 
-    model = DeepMatchModel(aa_sequence, aa_sequence_length, ion_location_index, input_spectrum)
-    print(f"output logits shape: {model.output_logits.get_shape()}")
+    # model = DeepMatchModel(aa_sequence, aa_sequence_length, ion_location_index, input_spectrum)
+    # print(f"output logits shape: {model.output_logits.get_shape()}")
 
 
 if __name__ == '__main__':

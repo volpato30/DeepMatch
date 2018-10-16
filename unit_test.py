@@ -24,6 +24,7 @@ class TestCythonFunctions(unittest.TestCase):
                                                           f"right: {target}")
 
     def test_process_spectrum(self):
+        assert config.delta_M == 0.5
         mz_list = [103.2, 209.5]
         intensity_list = [100.0, 1000.0]
 
