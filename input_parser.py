@@ -21,10 +21,6 @@ def _bytes_feature(value):
     return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
 
 
-def _float32_feature(value):
-    return tf.train.Feature(float_list=tf.train.FloatList(value=[value]))
-
-
 @dataclass
 class CandidatePeptide:
     peptide_str: str
@@ -99,7 +95,7 @@ class BaseParser(ABC):
         while index < raw_sequence_len:
             if raw_sequence[index] == "(":
                 if peptide[-1] == 'M' and raw_sequence[index:index + 8] == "(+15.99)":
-                    peptide[-1] = 'Mmod'
+                    peptide[-1] = 'M(Oxidation)'
                     index += 8
                 else:  # unknown modification
                     logger.error(f"encounter unknown modification in sequence {raw_sequence}")
@@ -124,11 +120,18 @@ class BaseParser(ABC):
         intensity_list = []
         line = self.input_spectrum_handle.readline()
         while line != '\n':
-            mz, intensity = re.split(' |\r|\n', line)[:2]
-            mz_float = float(mz)
-            intensity_float = float(intensity)
+            mz, intensity = re.split('  |\r|\n', line)[:2]
+            try:
+                mz_float = float(mz)
+                intensity_float = float(intensity)
+            except ValueError as e:
+                print("*" * 80)
+                print(f"ERROR: got mz: {mz}, intensity: {intensity}")
+                print("*" * 80)
+                raise e
+
             # skip an ion if its mass > MZ_MAX
-            if mz_float > config.max_mz:
+            if mz_float >= config.max_mz:
                 line = self.input_spectrum_handle.readline()
                 continue
             mz_list.append(mz_float)
@@ -167,6 +170,14 @@ class BaseParser(ABC):
                 pickle.dump(self.spectrum_location_dict, fw)
 
     def get_scan(self, scan: str):
+        """
+
+        :param scan: scan id
+        :return:
+            mz_list
+            intensity_list
+            candidate_peptide_list: sorted by logp score in an descending order
+        """
         self.input_spectrum_handle.seek(self.spectrum_location_dict[scan])
         candidate_peptides_list = []
         peptide_str = None
@@ -197,7 +208,8 @@ class BaseParser(ABC):
         mz_list, intensity_list = self._parse_spectrum_ion()
         # sanity check
         if len(mz_list) != num_peaks:
-            logger.warning(f"scan:{scan_id} len_mz_list: {len(mz_list) num_peaks: {num_peaks}}")
+            # it seems num_peaks in the original data is not correct
+            logger.debug(f"scan:{scan_id} len_mz_list: {len(mz_list)} num_peaks: {num_peaks}")
         assert len(candidate_peptides_list) > 0
         # the first candidate should be the positive sample
         first_score = candidate_peptides_list[0].logp_score
@@ -208,7 +220,7 @@ class BaseParser(ABC):
         if len(sorted_candidate_list) > 1 + config.num_neg_candidates:
             logger.warning(f"scan:{scan_id} has {len(sorted_candidate_list)} candidates")
             sorted_candidate_list = sorted_candidate_list[:1 + config.num_neg_candidates]
-        return sorted_candidate_list
+        return mz_list, intensity_list, sorted_candidate_list
 
 
 class TrainParser(BaseParser):
@@ -244,9 +256,13 @@ class TrainParser(BaseParser):
 
         peptide_sequence, peptide_length, peptide_location_index = BaseParser.get_peptide_features(pos_peptide)
 
-        input_spectrum_feature = _float32_feature(spectrum_holder.tolist())
-        pos_peptide_sequence_feature = _int64_feature(peptide_sequence)
-        pos_peptide_length_feature = _int64_feature(peptide_length)
+        input_spectrum_feature = tf.train.Feature(
+            float_list=tf.train.FloatList(
+                value=spectrum_holder.tolist()
+            )
+        )
+        pos_peptide_sequence_feature = tf.train.Feature(int64_list=tf.train.Int64List(value=peptide_sequence))
+        pos_peptide_length_feature = tf.train.Feature(int64_list=tf.train.Int64List(value=peptide_length))
         pos_peptide_location_index_feature = _bytes_feature(tf.compat.as_bytes(peptide_location_index.tostring()))
 
         neg_peptides = []
@@ -286,18 +302,26 @@ class TrainParser(BaseParser):
 
         return example
 
-    def convert_to_tfrecord(self, tfrecord_file_name: str):
+    def convert_to_tfrecord(self, tfrecord_file_name: str, test_mode: bool=False):
+        """
+
+        :param tfrecord_file_name:
+        :param test_mode: if in test mode, keep the scans order.(purely for unittest purpose)
+        :return:
+        """
         writer = tf.python_io.TFRecordWriter(tfrecord_file_name)
         scans = list(self.spectrum_location_dict.keys())
-
-        # shuffle the scans list
-        random.shuffle(scans)
+        if test_mode:
+            pass
+        else:
+            # shuffle the scans list
+            random.shuffle(scans)
         writed_scans = 0
         for i, scan in enumerate(scans):
             mz_list, intensity_list, candidate_peptide_list = self.get_scan(scan)
             example = self.make_example(mz_list, intensity_list, candidate_peptide_list)
             if example:
-                writer.write(example.SerializeToString)
+                writer.write(example.SerializeToString())
                 writed_scans += 1
         writer.close()
         logging.info(f"in total {len(scans)} scans, write {writed_scans} to train set")

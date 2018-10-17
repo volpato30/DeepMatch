@@ -10,4 +10,5 @@ build: clean
 
 .PHONY: test
 test: build
+	rm -f test_data/test_scans.tfrecord
 	python unit_test.py

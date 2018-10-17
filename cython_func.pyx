@@ -60,7 +60,9 @@ def get_ions_mz_index(float peptide_mass, float prefix_mass):
 
 def process_spectrum(spectrum_mz_list, spectrum_intensity_list):
     """transfer a list of peaks to a vector representation
-
+    ******
+    This function do not check spectrum_mz OutOfRange!
+    ******
     returns:
         a vector of length M
     """

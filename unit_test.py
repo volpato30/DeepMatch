@@ -1,9 +1,14 @@
 import unittest
+import logging
+import logging.config
 import tensorflow as tf
 import numpy as np
 import config
 import cython_func
+from input_parser import TrainParser, make_dataset
 from utils import batch_scatter_add, batch_scatter
+
+logger = logging.getLogger(__name__)
 
 
 class TestCythonFunctions(unittest.TestCase):
@@ -140,8 +145,74 @@ class TestBatchScatter(unittest.TestCase):
 
 
 class TestReader(unittest.TestCase):
-    pass
+    def setUp(self):
+        self.train_parser = TrainParser(spectrum_file="./test_data/test_scans.txt")
 
+    def test_convert_to_tfrecord(self):
+        self.train_parser.convert_to_tfrecord("./test_data/test_scans.tfrecord", test_mode=True)
+
+    def test_read_tfrecord(self):
+        """
+        Integration test
+        :return:
+        """
+        dataset = make_dataset("./test_data/test_scans.tfrecord", batch_size=1, num_processes=1)
+        iterator = tf.data.Iterator.from_structure(dataset.output_types, dataset.output_shapes)
+        next_element = iterator.get_next()
+        init_op = iterator.make_initializer(dataset)
+
+        with tf.Session() as sess:
+            sess.run(init_op)
+            first_dp = sess.run(next_element)
+            logger.debug(f"pos_aa_sequence_length have shape: {first_dp['pos_aa_sequence_length'].shape}")
+            # check length
+            self.assertEqual(first_dp['pos_aa_sequence_length'][0][0], 8)
+            self.assertEqual(first_dp['neg_aa_sequence_length'][0][0], 9)
+
+            pos_peptide = list("KKIYEEKK")
+            pos_peptide = [config.vocab[x] for x in pos_peptide]
+            pos_peptide = TrainParser.pad_to_length(pos_peptide, config.peptide_max_length, config.PAD_ID)
+
+            neg_peptide = list("KGQKRSFSK")
+            neg_peptide = [config.vocab[x] for x in neg_peptide]
+            neg_peptide = TrainParser.pad_to_length(neg_peptide, config.peptide_max_length, config.PAD_ID)
+
+            self.assertListEqual(pos_peptide, first_dp['pos_aa_sequence'][0].tolist())
+            self.assertListEqual(neg_peptide, first_dp['neg_aa_sequence'][0].tolist())
+
+            self.assertAlmostEqual(np.sum(first_dp['input_spectrum']), 1.0)
+            self.assertGreater(first_dp["input_spectrum"][0][784], 0.0)
+            self.assertGreater(first_dp["input_spectrum"][0][1839], 0.0)
+            self.assertGreater(first_dp["input_spectrum"][0][160], 0.0)
 
 if __name__ == '__main__':
+    log_file_name = 'deepMatch.log'
+    d = {
+        'version': 1,
+        'disable_existing_loggers': False,  # this fixes the problem
+        'formatters': {
+            'standard': {
+                'format': '%(asctime)s [%(levelname)s] %(name)s: %(message)s'
+            },
+        },
+        'handlers': {
+            'console': {
+                'level': 'INFO',
+                'class': 'logging.StreamHandler',
+                'formatter': 'standard',
+            },
+            'file': {
+                'level': 'DEBUG',
+                'class': 'logging.FileHandler',
+                'filename': log_file_name,
+                'mode': 'w',
+                'formatter': 'standard',
+            }
+        },
+        'root': {
+            'handlers': ['console', 'file'],
+            'level': 'DEBUG',
+        }
+    }
+    logging.config.dictConfig(d)
     unittest.main()
