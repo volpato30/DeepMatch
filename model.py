@@ -165,7 +165,7 @@ def deep_match_scoring(aa_sequence, aa_sequence_length, ion_location_index, inpu
     net = net[:, 1:-1, :]
 
     with tf.variable_scope('spectral_transform', reuse=reuse):
-        net = layers.dense(net, config.spectral_hidden_dimension, activation=tf.nn.relu,
+        net = layers.dense(net, config.num_ion_combination * config.spectral_hidden_dimension, activation=tf.nn.relu,
                            kernel_regularizer=kernel_regularizer)
     logger.info('hidden output shape:')
     logger.info(net.get_shape())

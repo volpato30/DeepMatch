@@ -43,7 +43,6 @@ class Solver(object):
         logits = tf.concat((pos_logits, neg_logits), axis=0)
         target = tf.concat((pos_target, neg_target), axis=0)
 
-
         self.ce_loss = tf.nn.sigmoid_cross_entropy_with_logits(labels=target,
                                                                logits=logits,
                                                                name="compute_binary_crossentropy_loss")
@@ -59,19 +58,26 @@ class Solver(object):
         tf.summary.scalar('weight_l2_norm', self.weight_l2_norm)
         tf.summary.scalar('train_accuracy', self.accuracy)
 
-        self.train_op = self.opt.minimize(self.ce_loss + self.weight_l2_norm, global_step=self.global_step)
-        #self.summary_op = tf.summary.merge_all()
+        total_loss = self.ce_loss + self.weight_l2_norm
+        self.train_op = self.opt.minimize(total_loss, global_step=self.global_step)
+
+        num_param = np.sum([np.prod(v.get_shape().as_list()) for v in tf.trainable_variables()])
+        logger.info(f"the model has {num_param} parameters")
 
     def solve(self):
         scaffold = tf.train.Scaffold(saver=tf.train.Saver(max_to_keep=1))
         best_valid_loss = float("inf")
-        with tf.train.MonitoredTrainingSession(checkpoint_dir="./chkpoint",
-                                               scaffold=scaffold,
-                                               save_summaries_secs=30,
-                                               save_checkpoint_secs=None,
-                                               save_checkpoint_steps=None) as sess:
+        # TODO: make MoniterSession work
+        # with tf.train.MonitoredTrainingSession(checkpoint_dir="./chkpoint",
+        #                                        scaffold=scaffold,
+        #                                        save_summaries_secs=30,
+        #                                        save_checkpoint_secs=None,
+        #                                        save_checkpoint_steps=None) as sess:
+        init_op = tf.global_variables_initializer()
+        with tf.Session() as sess:
+            sess.run(init_op)
             for epoch in range(1, config.num_epochs+1):
-                sess.run(self.training_init_op, feed_dict={self.keep_prob: 1.0})
+                sess.run(self.training_init_op)
                 while True:
                     try:
                         _ = sess.run(self.train_op, feed_dict={self.keep_prob: config.keep_prob})
