@@ -1,8 +1,36 @@
 import logging.config
 import tensorflow as tf
 import config
+import click
+from InputParser import TrainParser
+from solver import Solver
 
-def main():
+
+def train():
+    solver = Solver()
+    solver.solve()
+
+
+def prep_tfrecord():
+    train_parser = TrainParser(spectrum_file=config.train_file)
+    train_parser.convert_to_tfrecord(config.train_record_path)
+
+    valid_parser = TrainParser(spectrum_file=config.valid_file)
+    valid_parser.convert_to_tfrecord(config.valid_record_path)
+
+
+@click.command()
+@click.option('--mode', default='train', help='train or prep')
+def main(mode: str):
+    if mode == 'train':
+        train()
+    elif mode == 'prep':
+        prep_tfrecord()
+    else:
+        raise ValueError("not supported mode")
+
+
+if __name__ == '__main__':
     log_file_name = 'deepMatch.log'
     d = {
         'version': 1,
@@ -32,21 +60,4 @@ def main():
         }
     }
     logging.config.dictConfig(d)
-
-    aa_sequence = tf.placeholder(tf.int64, shape=(None, config.peptide_max_length),
-                                                  name='aa_sequence_placeholder')
-    aa_sequence_length = tf.placeholder(tf.int64, shape=(None,),
-                                                         name='aa_sequence_length_placeholder')
-    ion_location_index = tf.placeholder(tf.int64,
-                                                        shape=(None, config.peptide_max_length - 1,
-                                                               config.num_ion_combination),
-                                                        name="ion_location_index_placeholder")
-    input_spectrum = tf.placeholder(tf.float32, shape=(None, config.M, 1),
-                                                     name='input_spectrum_placeholder')
-
-    # model = DeepMatchModel(aa_sequence, aa_sequence_length, ion_location_index, input_spectrum)
-    # print(f"output logits shape: {model.output_logits.get_shape()}")
-
-
-if __name__ == '__main__':
     main()

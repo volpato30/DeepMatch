@@ -12,3 +12,11 @@ build: clean
 test: build
 	rm -f test_data/test_scans.tfrecord
 	python unit_test.py
+
+.PHONY: train
+train:
+	python main.py --mode train
+
+.PHONY: prep
+prep:
+	python main.py --mode prep

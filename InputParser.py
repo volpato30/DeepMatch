@@ -71,7 +71,8 @@ class BaseParser(ABC):
             peptide_location_index.append(ion_location_index)
         peptide_sequence = BaseParser.pad_to_length(peptide_sequence, config.peptide_max_length, config.PAD_ID)
 
-        pad_ion_index = np.zeros(config.num_ion_combination, dtype=np.int64)
+        # pad location index with an invalid index so that it will be masked out in the computation graph.
+        pad_ion_index = np.ones(config.num_ion_combination, dtype=np.int64) * (config.M + 1)
         peptide_location_index = BaseParser.pad_to_length(peptide_location_index,
                                                           config.peptide_max_length - 1,
                                                           pad_ion_index)
@@ -196,7 +197,7 @@ class BaseParser(ABC):
                 # assuming there is alway a comment after a corresponding name.
                 peptide_logp_score = float(line.strip('\n').split('Score= ')[1])
                 accession = line.split('Accession=')[1].split(" Score=")[0]
-                is_decoy = True if accession else False
+                is_decoy = False if accession else True
                 candidate_peptides_list.append(
                     CandidatePeptide(peptide_str=peptide_str,
                                      logp_score=peptide_logp_score,
@@ -215,8 +216,8 @@ class BaseParser(ABC):
         first_score = candidate_peptides_list[0].logp_score
         keyfunc = lambda x: x.logp_score
         sorted_candidate_list = sorted(candidate_peptides_list, key=keyfunc, reverse=True)
-        if first_score != sorted_candidate_list[0].logp_score:
-            logger.warning(f"scan:{scan_id} the first candidate is not the one with highest score.")
+        # if first_score != sorted_candidate_list[0].logp_score:
+        #     logger.warning(f"scan:{scan_id} the first candidate is not the one with highest score.")
         if len(sorted_candidate_list) > 1 + config.num_neg_candidates:
             logger.warning(f"scan:{scan_id} has {len(sorted_candidate_list)} candidates")
             sorted_candidate_list = sorted_candidate_list[:1 + config.num_neg_candidates]

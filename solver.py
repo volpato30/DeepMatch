@@ -2,11 +2,12 @@ import tensorflow as tf
 import numpy as np
 import logging
 import config
-from input_parser import prepare_dataset_iterators
+from InputParser import prepare_dataset_iterators
 from model import deep_match_scoring
 
 
 logger = logging.getLogger(__name__)
+
 
 class Solver(object):
     """Helper class for defining training loop and train"""
@@ -61,7 +62,6 @@ class Solver(object):
         self.train_op = self.opt.minimize(self.ce_loss + self.weight_l2_norm, global_step=self.global_step)
         #self.summary_op = tf.summary.merge_all()
 
-
     def solve(self):
         scaffold = tf.train.Scaffold(saver=tf.train.Saver(max_to_keep=1))
         best_valid_loss = float("inf")
@@ -71,7 +71,7 @@ class Solver(object):
                                                save_checkpoint_secs=None,
                                                save_checkpoint_steps=None) as sess:
             for epoch in range(1, config.num_epochs+1):
-                sess.run(self.training_init_op)
+                sess.run(self.training_init_op, feed_dict={self.keep_prob: 1.0})
                 while True:
                     try:
                         _ = sess.run(self.train_op, feed_dict={self.keep_prob: config.keep_prob})
@@ -81,7 +81,7 @@ class Solver(object):
                         break
 
                 # after training one epoch, do validation
-                sess.run(self.validation_init_op)
+                sess.run(self.validation_init_op, feed_dict={self.keep_prob: 1.0})
                 losses = []
                 accs = []
                 logger.debug(f"finish {epoch}th epoch, start validation")

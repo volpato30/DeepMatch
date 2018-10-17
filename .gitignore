@@ -5,3 +5,5 @@ build/
 *.so
 *.pyc
 *.log
+*.tfrecord
+*.pkl

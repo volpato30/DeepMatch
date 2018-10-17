@@ -1,9 +1,9 @@
 import numpy as np
-import tensorflow as tf
 
 
-peptide_max_length = 12
+peptide_max_length = 15
 num_ion_combination = 18
+# M should be dividable by 32
 M = 4000  # contrast to the original paper, we let the discretized spectrum start from 0
 delta_M = 0.5
 max_mz = int(np.ceil(M * delta_M))
@@ -100,6 +100,13 @@ save_dir = './train_dir'
 num_epochs = 20
 
 num_neg_candidates = 4
+
+
+fdr_threshold = 0.005
+# train, valid, test file path
+train_file = './data/train_scans.txt'
+valid_file = './data/valid_scans.txt'
+test_file = './data/test_scans.txt'
 
 # tfrecord path
 train_record_path = './data/train.tfrecords'

@@ -47,48 +47,64 @@ def vgg_1d(input_tensor, reuse=None):
     :return:
     """
     net = layers.conv1d(input_tensor, config.spectral_hidden_dimension, kernel_size=7, strides=2,
-                        padding='same', activation=tf.nn.relu, kernel_regularizer=kernel_regularizer, reuse=reuse)
+                        padding='same', activation=tf.nn.relu, kernel_regularizer=kernel_regularizer, name="conv11",
+                        reuse=reuse)
     net = layers.conv1d(net, config.spectral_hidden_dimension, kernel_size=3, strides=1,
-                        padding='same', activation=tf.nn.relu, kernel_regularizer=kernel_regularizer, reuse=reuse)
+                        padding='same', activation=tf.nn.relu, kernel_regularizer=kernel_regularizer, name="conv12",
+                        reuse=reuse)
     net = layers.conv1d(net, config.spectral_hidden_dimension, kernel_size=3, strides=1,
-                        padding='same', activation=tf.nn.relu, kernel_regularizer=kernel_regularizer, reuse=reuse)
+                        padding='same', activation=tf.nn.relu, kernel_regularizer=kernel_regularizer, name="conv13",
+                        reuse=reuse)
     # [2000 64]
 
     net = layers.conv1d(net, 2 * config.spectral_hidden_dimension, kernel_size=3, strides=2,
-                        padding='same', activation=tf.nn.relu, kernel_regularizer=kernel_regularizer, reuse=reuse)
+                        padding='same', activation=tf.nn.relu, kernel_regularizer=kernel_regularizer, name="conv21",
+                        reuse=reuse)
     net = layers.conv1d(net, 2 * config.spectral_hidden_dimension, kernel_size=3, strides=1,
-                        padding='same', activation=tf.nn.relu, kernel_regularizer=kernel_regularizer, reuse=reuse)
+                        padding='same', activation=tf.nn.relu, kernel_regularizer=kernel_regularizer, name="conv22",
+                        reuse=reuse)
     net = layers.conv1d(net, 2 * config.spectral_hidden_dimension, kernel_size=3, strides=1,
-                        padding='same', activation=tf.nn.relu, kernel_regularizer=kernel_regularizer, reuse=reuse)
+                        padding='same', activation=tf.nn.relu, kernel_regularizer=kernel_regularizer, name="conv23",
+                        reuse=reuse)
     # [1000, 128], 0.15 params
 
     net = layers.conv1d(net, 4 * config.spectral_hidden_dimension, kernel_size=3, strides=2,
-                        padding='same', activation=tf.nn.relu, kernel_regularizer=kernel_regularizer, reuse=reuse)
+                        padding='same', activation=tf.nn.relu, kernel_regularizer=kernel_regularizer, name="conv31",
+                        reuse=reuse)
     net = layers.conv1d(net, 4 * config.spectral_hidden_dimension, kernel_size=3, strides=1,
-                        padding='same', activation=tf.nn.relu, kernel_regularizer=kernel_regularizer, reuse=reuse)
+                        padding='same', activation=tf.nn.relu, kernel_regularizer=kernel_regularizer, name="conv32",
+                        reuse=reuse)
     net = layers.conv1d(net, 4 * config.spectral_hidden_dimension, kernel_size=3, strides=1,
-                        padding='same', activation=tf.nn.relu, kernel_regularizer=kernel_regularizer, reuse=reuse)
+                        padding='same', activation=tf.nn.relu, kernel_regularizer=kernel_regularizer, name="conv33",
+                        reuse=reuse)
     # [500, 256], 0.6M params
 
     net = layers.conv1d(net, 4 * config.spectral_hidden_dimension, kernel_size=3, strides=2,
-                        padding='same', activation=tf.nn.relu, kernel_regularizer=kernel_regularizer, reuse=reuse)
+                        padding='same', activation=tf.nn.relu, kernel_regularizer=kernel_regularizer, name="conv41",
+                        reuse=reuse)
     net = layers.conv1d(net, 4 * config.spectral_hidden_dimension, kernel_size=3, strides=1,
-                        padding='same', activation=tf.nn.relu, kernel_regularizer=kernel_regularizer, reuse=reuse)
+                        padding='same', activation=tf.nn.relu, kernel_regularizer=kernel_regularizer, name="conv42",
+                        reuse=reuse)
     net = layers.conv1d(net, 4 * config.spectral_hidden_dimension, kernel_size=3, strides=1,
-                        padding='same', activation=tf.nn.relu, kernel_regularizer=kernel_regularizer, reuse=reuse)
+                        padding='same', activation=tf.nn.relu, kernel_regularizer=kernel_regularizer, name="conv43",
+                        reuse=reuse)
     # [250, 256], 0.6M
 
     net = layers.conv1d(net, 4 * config.spectral_hidden_dimension, kernel_size=3, strides=2,
-                        padding='same', activation=tf.nn.relu, kernel_regularizer=kernel_regularizer, reuse=reuse)
+                        padding='same', activation=tf.nn.relu, kernel_regularizer=kernel_regularizer, name="conv51",
+                        reuse=reuse)
     net = layers.conv1d(net, 4 * config.spectral_hidden_dimension, kernel_size=3, strides=1,
-                        padding='same', activation=tf.nn.relu, kernel_regularizer=kernel_regularizer, reuse=reuse)
+                        padding='same', activation=tf.nn.relu, kernel_regularizer=kernel_regularizer, name="conv52",
+                        reuse=reuse)
     net = layers.conv1d(net, 4 * config.spectral_hidden_dimension, kernel_size=3, strides=1,
-                        padding='same', activation=tf.nn.relu, kernel_regularizer=kernel_regularizer, reuse=reuse)
+                        padding='same', activation=tf.nn.relu, kernel_regularizer=kernel_regularizer, name="conv53",
+                        reuse=reuse)
     # [125, 256], 0.6M
 
     # finally a fully connected layer
     net = layers.conv1d(net, 1, kernel_size=config.M // 32, strides=1,
-                        padding='valid', activation=None, kernel_regularizer=kernel_regularizer, reuse=reuse)
+                        padding='valid', activation=None, kernel_regularizer=kernel_regularizer, name="conv_final",
+                        reuse=reuse)
     logits = tf.squeeze(net, axis=[1, 2])
 
     return logits
@@ -97,14 +113,20 @@ def vgg_1d(input_tensor, reuse=None):
 def deep_match_scoring(aa_sequence, aa_sequence_length, ion_location_index, input_spectrum, keep_prob, reuse=None):
     """
     build computation graph
-    :param aa_sequence:
-    :param aa_sequence_length:
+    :param aa_sequence: [batch, peptide_max_length]
+    :param aa_sequence_length: [batch, 1]
     :param ion_location_index: notice the index can be negative or out of bound, need to process in the model
     :param input_spectrum:
     :param keep_prob:
     :param reuse:
     :return:
     """
+    if aa_sequence_length.get_shape().ndims == 2:
+        aa_sequence_length = tf.squeeze(aa_sequence_length, 1)
+    if input_spectrum.get_shape().ndims == 2:
+        input_spectrum = tf.expand_dims(input_spectrum, axis=2)
+    assert aa_sequence_length.get_shape().ndims == 1
+    assert input_spectrum.get_shape().ndims == 3
     with tf.variable_scope('embeddings', initializer=xavier_initializer(), reuse=reuse):
         amino_acid_embedding = tf.get_variable(name='aa_embedding',
                                                shape=[config.vocab_size, config.embed_dimension],
@@ -156,7 +178,14 @@ def deep_match_scoring(aa_sequence, aa_sequence_length, ion_location_index, inpu
     theoretical_spectrum_shape = tf.stack([tf.cast(location_shape[0], tf.int64),
                                            config.M,
                                            config.spectral_hidden_dimension])
-    #TODO: fix ion_location negative or out of bound problem here.
+
+    # Mask out Out Of Range location indices
+    mask_matrix = tf.cast(resized_location < config.M, tf.int64)
+    resized_location = resized_location * mask_matrix
+
+    float_mask_matrix = tf.expand_dims(tf.cast(mask_matrix, tf.float32), axis=2)
+    resized_net = resized_net * float_mask_matrix
+
     theoretical_spectrum = batch_scatter(indices=resized_location, updates=resized_net,
                                          shape=theoretical_spectrum_shape, name='batch_scatter')
 

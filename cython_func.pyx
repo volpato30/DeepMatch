@@ -14,7 +14,7 @@ cdef float mass_CO = config.mass_CO
 
 def get_ions_mz_index(float peptide_mass, float prefix_mass):
     """
-
+    if the peptide_mass and prefix_mass are properly feed(from real peptides) then the output should always be positive
     :param peptide_mass: the total (neutral) mass of the peptide
     :param prefix_mass: the accumulated (neutral) mass of AAs from the left hand side
     :return: a length 18 vector, represent the possible 18 combination of ions locations.
