@@ -1,3 +1,7 @@
+A=128
+F=256
+H=4
+
 .PHONY: clean
 clean:
 	rm -rf build
@@ -16,9 +20,10 @@ test: build
 .PHONY: train
 train:
 	rm -rf chkpoint/*
-	python main.py --mode train
+	python main.py --mode train --A $(A) --F $(F) --H $(H)
 
 .PHONY: prep
 prep:
 	rm -rf data/*.tfrecord
 	python main.py --mode prep
+
