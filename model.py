@@ -141,9 +141,12 @@ def deep_match_scoring(aa_sequence, aa_sequence_length, ion_location_index, inpu
                                axis=0, name='masked_emb')
 
     peptide_embedded = tf.nn.embedding_lookup(amino_acid_embedding, aa_sequence) + \
-                       position_embedding
+                       tf.expand_dims(position_embedding, axis=0)
     peptide_pad_mask = tf.nn.embedding_lookup(mask_embedding, aa_sequence)
     peptide_embedded = peptide_embedded * peptide_pad_mask
+    logger.info('peptide_embedded shape:')
+    logger.info(peptide_embedded.get_shape())
+
     # dropout
     peptide_embedded = tf.nn.dropout(peptide_embedded, keep_prob=keep_prob, name='embedding_dropout')
 

@@ -15,6 +15,7 @@ test: build
 
 .PHONY: train
 train:
+	rm -rf chkpoint/*
 	python main.py --mode train
 
 .PHONY: prep

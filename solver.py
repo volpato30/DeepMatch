@@ -1,3 +1,4 @@
+import os
 import tensorflow as tf
 import numpy as np
 import logging
@@ -5,12 +6,12 @@ import config
 from InputParser import prepare_dataset_iterators
 from model import deep_match_scoring
 
-
 logger = logging.getLogger(__name__)
 
 
 class Solver(object):
     """Helper class for defining training loop and train"""
+
     def __init__(self):
         """
         building computation graph here
@@ -39,9 +40,13 @@ class Solver(object):
                                         self.keep_prob,
                                         reuse=True)
         pos_target = tf.ones_like(pos_logits, dtype=tf.float32)
-        neg_target = tf.zeros_like(neg_logits, dtype=tf.float32)
+        #neg_target = tf.zeros_like(neg_logits, dtype=tf.float32)
+        neg_target = tf.ones_like(neg_logits, dtype=tf.float32)
         logits = tf.concat((pos_logits, neg_logits), axis=0)
         target = tf.concat((pos_target, neg_target), axis=0)
+
+        logger.info(f"logits shape:")
+        logger.info(f"{logits.get_shape()}")
 
         self.ce_loss = tf.nn.sigmoid_cross_entropy_with_logits(labels=target,
                                                                logits=logits,
@@ -57,15 +62,18 @@ class Solver(object):
         tf.summary.scalar('ce_loss', self.ce_loss)
         tf.summary.scalar('weight_l2_norm', self.weight_l2_norm)
         tf.summary.scalar('train_accuracy', self.accuracy)
+        tf.summary.histogram('pos_logits', pos_logits)
+        tf.summary.histogram('neg_logits', neg_logits)
 
         total_loss = self.ce_loss + self.weight_l2_norm
-        self.train_op = self.opt.minimize(total_loss, global_step=self.global_step)
+        self.train_op = self.opt.minimize(self.ce_loss, global_step=self.global_step)
+        self.summary_op = tf.summary.merge_all()
 
         num_param = np.sum([np.prod(v.get_shape().as_list()) for v in tf.trainable_variables()])
         logger.info(f"the model has {num_param} parameters")
 
     def solve(self):
-        scaffold = tf.train.Scaffold(saver=tf.train.Saver(max_to_keep=1))
+        # scaffold = tf.train.Scaffold(saver=tf.train.Saver(max_to_keep=1))
         best_valid_loss = float("inf")
         # TODO: make MoniterSession work
         # with tf.train.MonitoredTrainingSession(checkpoint_dir="./chkpoint",
@@ -73,16 +81,22 @@ class Solver(object):
         #                                        save_summaries_secs=30,
         #                                        save_checkpoint_secs=None,
         #                                        save_checkpoint_steps=None) as sess:
+        saver = tf.train.Saver(max_to_keep=1)
         init_op = tf.global_variables_initializer()
         with tf.Session() as sess:
+            train_writer = tf.summary.FileWriter(os.path.join(self.save_dir, 'train_summary'), sess.graph)
             sess.run(init_op)
-            for epoch in range(1, config.num_epochs+1):
+            for epoch in range(1, config.num_epochs + 1):
                 sess.run(self.training_init_op)
                 while True:
+                    train_step = 0
                     try:
-                        _ = sess.run(self.train_op, feed_dict={self.keep_prob: config.keep_prob})
-                        # train_writer.add_summary(summary, gs)
-                        # train_writer.flush()
+                        _, summary, gs = sess.run([self.train_op, self.summary_op, self.global_step],
+                                                  feed_dict={self.keep_prob: config.keep_prob})
+                        if train_step % 10 == 0:
+                            train_writer.add_summary(summary, gs)
+                            train_writer.flush()
+                        train_step += 1
                     except tf.errors.OutOfRangeError:
                         break
 
@@ -101,9 +115,7 @@ class Solver(object):
                         valid_acc = np.mean(accs)
                         if valid_loss < best_valid_loss:
                             best_valid_loss = valid_loss
-                            scaffold.saver.save(sess, "deepMatch.ckpt", global_step=self.global_step)
+                            logger.info(f"{epoch}th epoch, achieve new best validation loss: {valid_loss}")
+                            saver.save(sess, os.path.join(self.save_dir, "deepMatch.ckpt"), global_step=self.global_step)
                         logger.info(f"{epoch}th epoch, validation loss: {valid_loss}\tvalidation acc: {valid_acc}")
                         break
-
-
-

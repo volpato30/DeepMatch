@@ -11,11 +11,11 @@ resolution = 2
 
 assert delta_M * resolution == 1
 
-embed_dimension = 64  # A in the original paper
-lstm_output_dimension = 128  # F in the original paper
-spectral_hidden_dimension = 64  # H in the original paper
+embed_dimension = 128  # A in the original paper
+lstm_output_dimension = 128  # F / 2 in the original paper
+spectral_hidden_dimension = 128  # H in the original paper
 
-weight_decay = 1e-4
+weight_decay = 5e-5
 
 _PAD = "_PAD"
 _START_VOCAB = [_PAD]
@@ -96,7 +96,7 @@ mass_AA = {'_PAD': 0.0,
 mass_ID = [mass_AA[vocab_reverse[x]] for x in range(vocab_size)]
 mass_AA_min = mass_AA["G"] # 57.02146
 
-save_dir = './train_dir'
+save_dir = './chkpoint'
 num_epochs = 20
 
 num_neg_candidates = 4

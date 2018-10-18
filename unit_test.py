@@ -16,8 +16,8 @@ class TestCythonFunctions(unittest.TestCase):
         pass
 
     def test_get_ions_location_index(self):
-        peptide_mass = 1000
-        prefix_mass = 100
+        peptide_mass = 1000.
+        prefix_mass = 100.
 
         # b, a, y
         assert config.delta_M == 0.5
@@ -27,20 +27,6 @@ class TestCythonFunctions(unittest.TestCase):
         for i, target in enumerate(expected_result):
             self.assertEqual(result_index[i], target, msg=f"left: {result_index[i]} not equal to "
                                                           f"right: {target}")
-
-        peptide_mass = 1000
-        prefix_mass = 100
-
-        # b, a, y
-        assert config.delta_M == 0.5
-        # the expected_result is computed under the assumpt that delta_M is 0.5
-        expected_result = [202, 165, 167, 146, 110, 111, 1802, 1765, 1767]
-        result_index = cython_func.get_ions_mz_index(peptide_mass, prefix_mass)
-        for i, target in enumerate(expected_result):
-            self.assertEqual(result_index[i], target, msg=f"left: {result_index[i]} not equal to "
-                                                          f"right: {target}")
-
-
 
     def test_process_spectrum(self):
         assert config.delta_M == 0.5
@@ -207,6 +193,14 @@ class TestReader(unittest.TestCase):
             self.assertGreater(first_dp["input_spectrum"][0][784], 0.0)
             self.assertGreater(first_dp["input_spectrum"][0][1839], 0.0)
             self.assertGreater(first_dp["input_spectrum"][0][160], 0.0)
+
+            for i in first_dp["pos_ion_location_index"][0][-1].tolist():
+                # pad pos_ion_location with config.M
+                self.assertEqual(i, config.M)
+
+            for i in first_dp["neg_ion_location_index"][0][-1].tolist():
+                # pad pos_ion_location with config.M
+                self.assertEqual(i, config.M)
 
 if __name__ == '__main__':
     log_file_name = 'deepMatch.log'

@@ -72,7 +72,7 @@ class BaseParser(ABC):
         peptide_sequence = BaseParser.pad_to_length(peptide_sequence, config.peptide_max_length, config.PAD_ID)
 
         # pad location index with an invalid index so that it will be masked out in the computation graph.
-        pad_ion_index = np.ones(config.num_ion_combination, dtype=np.int64) * (config.M + 1)
+        pad_ion_index = np.ones(config.num_ion_combination, dtype=np.int64) * config.M
         peptide_location_index = BaseParser.pad_to_length(peptide_location_index,
                                                           config.peptide_max_length - 1,
                                                           pad_ion_index)
