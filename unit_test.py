@@ -76,8 +76,8 @@ class TestBatchScatterAdd(unittest.TestCase):
             r2 = sess.run(self.final_output, feed_dict={self.location_index: self.location_np})
             out = sess.run(self.output, feed_dict={self.location_index: self.location_np})
 
-            self.assertAlmostEqual(r1, np.sum(np.arange(2*2*3)) / (2 * 5 *3))
-            self.assertAlmostEqual(r2, np.sum(np.arange(2*2*3)) / (2 * 5 *3))
+            self.assertAlmostEqual(r1, np.sum(np.arange(2 * 2 * 3)) / (2 * 5 * 3))
+            self.assertAlmostEqual(r2, np.sum(np.arange(2 * 2 * 3)) / (2 * 5 * 3))
             out_true = np.zeros((2, 5, 3), np.float32)
             out_true[0, 0] = np.array([0., 1., 2.])
             out_true[0, 4] = np.array([3., 4., 5.])
@@ -134,8 +134,8 @@ class TestBatchScatter(unittest.TestCase):
             r2 = sess.run(self.final_output, feed_dict={self.location_index: self.location_np})
             out = sess.run(self.output, feed_dict={self.location_index: self.location_np})
 
-            self.assertAlmostEqual(r1, np.sum(np.arange(2*2*3 - 3)) / (2 * 5 *3))
-            self.assertAlmostEqual(r2, np.sum(np.arange(2*2*3 - 3)) / (2 * 5 *3))
+            self.assertAlmostEqual(r1, np.sum(np.arange(2 * 2 * 3 - 3)) / (2 * 5 * 3))
+            self.assertAlmostEqual(r2, np.sum(np.arange(2 * 2 * 3 - 3)) / (2 * 5 * 3))
             out_true = np.zeros((2, 5, 3), np.float32)
             out_true[0, 0] = np.array([0., 1., 2.]) + np.array([3., 4., 5.])
             out_true[1, 2] = np.array([6., 7., 8.])
@@ -162,7 +162,7 @@ class TestReader(unittest.TestCase):
 
     def test_read_tfrecord(self):
         """
-        Integration test
+        Integration test for converting to tfrecord and read from tfrecord
         :return:
         """
         dataset = make_dataset("./test_data/test_scans.tfrecord", batch_size=1, num_processes=1)
@@ -201,6 +201,17 @@ class TestReader(unittest.TestCase):
             for i in first_dp["neg_ion_location_index"][0][-1].tolist():
                 # pad pos_ion_location with config.M
                 self.assertEqual(i, config.M)
+
+            self.assertEqual(first_dp["pos_ion_location_index"].shape,
+                             (1, config.peptide_max_length - 1, config.num_ion_combination))
+            expected_array = np.array([258, 222, 224, 202, 166, 168, 1839, 1803, 1804, 130, 112,
+                                       113, 102, 84, 85, 920, 902, 903], dtype=np.int64)
+            self.assertTrue(np.all(expected_array == first_dp["pos_ion_location_index"][0][0]))
+
+            neg_expected_array = np.array([372, 336, 338, 316, 280, 282, 1724, 1688, 1690, 187, 169,
+                                           170, 159, 141, 142, 863, 845, 846], dtype=np.int64)
+            self.assertTrue(np.all(neg_expected_array == first_dp["neg_ion_location_index"][0][1]))
+
 
 if __name__ == '__main__':
     log_file_name = 'deepMatch.log'

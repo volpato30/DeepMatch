@@ -65,13 +65,14 @@ class Solver(object):
         tf.summary.histogram('neg_logits', neg_logits)
 
         total_loss = self.ce_loss + self.weight_l2_norm
-        self.train_op = self.opt.minimize(self.ce_loss, global_step=self.global_step)
+        # self.train_op = self.opt.minimize(self.ce_loss, global_step=self.global_step)
+        self.train_op = self.opt.minimize(total_loss, global_step=self.global_step)
         self.summary_op = tf.summary.merge_all()
 
         num_param = np.sum([np.prod(v.get_shape().as_list()) for v in tf.trainable_variables()])
         logger.info(f"the model has {num_param} parameters")
 
-    def solve(self):
+    def solve(self, output_file: str):
         # scaffold = tf.train.Scaffold(saver=tf.train.Saver(max_to_keep=1))
         best_valid_loss = float("inf")
         # TODO: make MoniterSession work
@@ -118,3 +119,11 @@ class Solver(object):
                             saver.save(sess, os.path.join(self.save_dir, "deepMatch.ckpt"), global_step=self.global_step)
                         logger.info(f"{epoch}th epoch, validation loss: {valid_loss}\tvalidation acc: {valid_acc}")
                         break
+
+        with open(output_file, 'a') as f:
+            param_string = f"{config.embed_dimension}\t" \
+                           f"{config.lstm_output_dimension}\t" \
+                           f"{config.spectral_hidden_dimension}\t" \
+                           f"{config.FLAGS.init_lr}\t" \
+                           f"{best_valid_loss}\n"
+            f.write(param_string)

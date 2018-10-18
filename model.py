@@ -110,6 +110,15 @@ def vgg_1d(input_tensor, reuse=None):
     return logits
 
 
+def simple_readout(input_tensor, reuse=None):
+    """
+    The trivial readout for baseline.
+    :param input_tensor: [batch_size, M, H]
+    :return:
+    """
+    pass
+
+
 def deep_match_scoring(aa_sequence, aa_sequence_length, ion_location_index, input_spectrum, keep_prob, reuse=None):
     """
     build computation graph

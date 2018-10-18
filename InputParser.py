@@ -244,6 +244,7 @@ class TrainParser(BaseParser):
             tf.train.Example object.
         """
         pos_sample = candidate_peptide_list[0]
+        pos_score = pos_sample.logp_score
         pos_peptide, unknown_mod = BaseParser.parse_raw_sequence(pos_sample.peptide_str)
         # get a random permutation of pos_peptide
         random_peptide = pos_peptide[:]
@@ -271,9 +272,14 @@ class TrainParser(BaseParser):
             neg_peptide, unknown_mod = BaseParser.parse_raw_sequence(cp.peptide_str)
             if unknown_mod:
                 continue
+            if cp.logp_score > pos_score * config.neg_sample_score_threshold:
+                continue
             neg_peptides.append(neg_peptide)
-
+        from_random = True if len(neg_peptides) == 0 else False
         neg_peptides = BaseParser.pad_to_length(neg_peptides, config.num_neg_candidates, random_peptide)
+        logger.debug(f"pos sample peptide: {pos_peptide}\t"
+                     f"neg sample peptide: {neg_peptides[0]}\t"
+                     f"from random: {from_random}")
 
         neg_peptide_sequence = []
         neg_peptide_length = []

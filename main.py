@@ -1,14 +1,13 @@
 import logging.config
 import tensorflow as tf
 import config
-import click
 from InputParser import TrainParser
 from solver import Solver
 
 
 def train():
     solver = Solver()
-    solver.solve()
+    solver.solve('exp_result.log')
 
 
 def prep_tfrecord():
@@ -19,12 +18,10 @@ def prep_tfrecord():
     valid_parser.convert_to_tfrecord(config.valid_record_path)
 
 
-@click.command()
-@click.option('--mode', default='train', help='train or prep')
-def main(mode: str):
-    if mode == 'train':
+def main():
+    if config.mode == 'train':
         train()
-    elif mode == 'prep':
+    elif config.mode == 'prep':
         prep_tfrecord()
     else:
         raise ValueError("not supported mode")

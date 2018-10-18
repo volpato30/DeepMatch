@@ -1,5 +1,25 @@
 import numpy as np
+import tensorflow as tf
 
+tf.app.flags.DEFINE_integer("A",
+                            128,
+                            "")
+tf.app.flags.DEFINE_integer("F",
+                            256,
+                            "")
+tf.app.flags.DEFINE_integer("H",
+                            4,
+                            "")
+tf.app.flags.DEFINE_float("init_lr",
+                          1e-3,
+                          "initial learning rate")
+tf.app.flags.DEFINE_string("mode",
+                           "train",
+                           "mode for the main.py")
+
+FLAGS = tf.app.flags.FLAGS
+
+mode = FLAGS.mode
 
 peptide_max_length = 15
 num_ion_combination = 18
@@ -11,11 +31,11 @@ resolution = 2
 
 assert delta_M * resolution == 1
 
-embed_dimension = 128  # A in the original paper
-lstm_output_dimension = 128  # F / 2 in the original paper
-spectral_hidden_dimension = 128  # H in the original paper
+embed_dimension = FLAGS.A  # A in the original paper
+lstm_output_dimension = FLAGS.F // 2  # F / 2 in the original paper
+spectral_hidden_dimension = FLAGS.H  # H in the original paper
 
-weight_decay = 5e-5
+weight_decay = 1e-6
 
 _PAD = "_PAD"
 _START_VOCAB = [_PAD]
@@ -109,16 +129,18 @@ valid_file = './data/valid_scans.txt'
 test_file = './data/test_scans.txt'
 
 # tfrecord path
-train_record_path = './data/train.tfrecords'
-valid_record_path = './data/valid.tfrecords'
+train_record_path = './data/train.tfrecord'
+valid_record_path = './data/valid.tfrecord'
 
 # piecewise constant learn rate
 boundaries = [500000]
-values = [1e-3, 1e-4]
+values = [FLAGS.init_lr, 1e-4]
 
 keep_prob = 0.8
 
-batch_size = 32
+batch_size = 16
 inference_batch_size = 32
 
 num_processes = 10
+
+neg_sample_score_threshold = 0.95
