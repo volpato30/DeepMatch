@@ -3,7 +3,7 @@ import tensorflow as tf
 import numpy as np
 import logging
 import config
-from InputParser import prepare_dataset_iterators
+from InputParser import prepare_dataset_iterators, CandidatePeptideDM, Scan
 from model import deep_match_scoring
 
 logger = logging.getLogger(__name__)
@@ -116,7 +116,8 @@ class Solver(object):
                         if valid_loss < best_valid_loss:
                             best_valid_loss = valid_loss
                             logger.info(f"{epoch}th epoch, achieve new best validation loss: {valid_loss}")
-                            saver.save(sess, os.path.join(self.save_dir, "deepMatch.ckpt"), global_step=self.global_step)
+                            saver.save(sess, os.path.join(self.save_dir, "deepMatch.ckpt"),
+                                       global_step=self.global_step)
                         logger.info(f"{epoch}th epoch, validation loss: {valid_loss}\tvalidation acc: {valid_acc}")
                         break
 
@@ -127,3 +128,56 @@ class Solver(object):
                            f"{config.FLAGS.init_lr}\t" \
                            f"{best_valid_loss}\n"
             f.write(param_string)
+
+
+class Inferencer(object):
+    def __init__(self):
+        """
+        building computation graph here
+        """
+        self.save_dir = config.save_dir
+        self.sequence_placeholder = tf.placeholder(tf.int64, shape=(None, config.peptide_max_length),
+                                                   name='sequence_placeholder')
+        self.sequence_length_placeholder = tf.placeholder(tf.int64, shape=(None, 1), name='sequence_length_placeholder')
+        self.ion_location_placeholder = tf.placeholder(tf.int64,
+                                                       shape=(
+                                                       None, config.peptide_max_length - 1, config.num_ion_combination),
+                                                       name='ion_location_placeholder')
+        self.spectrum_placeholder = tf.placeholder(tf.float32, shape=(None, config.M), name='spectrum_placeholder')
+
+        self.logits = deep_match_scoring(self.sequence_placeholder,
+                                         self.sequence_length_placeholder,
+                                         self.ion_location_placeholder,
+                                         self.spectrum_placeholder,
+                                         1.0,
+                                         reuse=False)
+
+    def inference(self, test_iterator):
+        final_scan_list = []
+        saver = tf.train.Saver()
+        checkpoint_path = tf.train.latest_checkpoint(self.save_dir)
+
+        with tf.Session() as sess:
+            saver.restore(sess, checkpoint_path)
+            for data in test_iterator:
+                input_spectrum, sequence, sequence_length, ion_location_index, scans_list = data
+                deep_match_scores = sess.run(self.logits, feed_dict={
+                    self.sequence_placeholder: sequence,
+                    self.sequence_length_placeholder: sequence_length,
+                    self.ion_location_placeholder: ion_location_index,
+                    self.spectrum_placeholder: input_spectrum,
+                })
+                ii = 0
+                for scan in scans_list:
+                    new_cp_list = []
+                    for cp in scan.retrieved_peptides:
+                        new_cp_list.append(CandidatePeptideDM(peptide_str=cp.peptide_str,
+                                                              logp_score=cp.logp_score,
+                                                              is_decoy=cp.is_decoy,
+                                                              deep_match_score=deep_match_scores[ii])
+                                           )
+                        ii += 1
+                    final_scan_list.append(Scan(scan_id=scan.scan_id, retrieved_peptides=new_cp_list))
+                assert ii == len(deep_match_scores)
+        return final_scan_list
+

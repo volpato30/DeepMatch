@@ -1,8 +1,11 @@
 import logging.config
 import tensorflow as tf
+from inference_utils import get_optimized_weights
 import config
-from InputParser import TrainParser
-from solver import Solver
+from InputParser import TrainParser, InferenceParser
+from solver import Solver, Inferencer
+from inference_utils import compute_indentification_under_fdr
+logger = logging.getLogger(__name__)
 
 
 def train():
@@ -18,11 +21,33 @@ def prep_tfrecord():
     valid_parser.convert_to_tfrecord(config.valid_record_path)
 
 
+def infer():
+    fdr = 0.01
+    inferencer = Inferencer()
+    infer_parser = InferenceParser(spectrum_file=config.test_file)
+    iterator = infer_parser.test_set_iterator()
+    scan_list = inferencer.inference(test_iterator=iterator)
+
+    key_logp = lambda x: x.logp_score
+    target, num_scans = compute_indentification_under_fdr(scan_list, fdr, key_logp)
+    logger.info(f"{target}/{num_scans} identified with PEAKS score")
+
+    key_deep_match = lambda x: x.deep_match_score
+    target, num_scans = compute_indentification_under_fdr(scan_list, fdr, key_deep_match)
+    logger.info(f"{target}/{num_scans} identified with DeepMatch score")
+
+    _ = get_optimized_weights(scan_list)
+
+
+
+
 def main():
     if config.mode == 'train':
         train()
     elif config.mode == 'prep':
         prep_tfrecord()
+    elif config.mode == 'infer':
+        infer()
     else:
         raise ValueError("not supported mode")
 

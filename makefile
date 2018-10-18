@@ -27,3 +27,6 @@ prep:
 	rm -rf data/*.tfrecord
 	python main.py --mode prep
 
+.PHONY: infer
+infer:
+	python main.py --mode infer

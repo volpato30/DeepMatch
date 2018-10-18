@@ -1,31 +1,23 @@
 import numpy as np
-from InputParser import InferenceParser, CandidatePeptide
+from InputParser import InferenceParser, ScanPSM
 import config
 import logging
 import logging.config
-from dataclasses import dataclass
 
 
-@dataclass
-class Scan:
-    scan_id: str
-    retrieved_peptide: CandidatePeptide
-    location_in_file: int
-
-
-def filter_by_fdr(scan_list: list, fdr: float):
+def _filter_by_fdr(scan_list: list, fdr: float, sort_key_func=lambda x: x.retrieved_peptide.logp_score):
     """
     input a list of Scan, output a subset of that list which passed the fdr control
     ******
     this function sort scan_list by logp_score inplace
     ******
+    :param sort_key_func:
     :param scan_list:
     :param fdr:
     :return:
         filtered_scan_list
     """
     num_scans = len(scan_list)
-    sort_key_func = lambda x: x.retrieved_peptide.logp_score
     sorted_scan_list = sorted(scan_list, key=sort_key_func, reverse=True)
     filtered_list = []
     target_count, decoy_count = 0, 0
@@ -124,12 +116,12 @@ if __name__ == "__main__":
     raw_scan_list = []
     for scan_id, location in parser.spectrum_location_dict.items():
         _, _, cp_list = parser.get_scan(scan_id)
-        scan = Scan(scan_id=scan_id, retrieved_peptide=cp_list[0], location_in_file=location)
+        scan = ScanPSM(scan_id=scan_id, retrieved_peptide=cp_list[0], location_in_file=location)
         raw_scan_list.append(scan)
     train_scan_list, test_scan_list = nodup_split(raw_scan_list, p=np.array([0.9, 0.1]))
     write_scans(test_scan_list, parser.input_spectrum_handle, config.test_file)
 
-    scan_list = filter_by_fdr(train_scan_list, config.fdr_threshold)
+    scan_list = _filter_by_fdr(train_scan_list, config.fdr_threshold)
     train_list, valid_list = nodup_split(scan_list, p=np.array([0.9, 0.1]))
     logging.info(f"train: {len(train_list)}\tvalid: {len(valid_list)}\ttest(not filtered): {len(test_scan_list)}")
     write_scans(train_list, parser.input_spectrum_handle, config.train_file)

@@ -21,11 +21,39 @@ def _bytes_feature(value):
     return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
 
 
+def chunks(l, n: int):
+    """
+    batching a list
+    :param l:
+    :param n:
+    :return:
+    """
+    for i in range(0, len(l), n):
+        yield l[i:i + n]
+
+
 @dataclass
 class CandidatePeptide:
     peptide_str: str
     logp_score: float
-    is_decoy: bool = False
+    is_decoy: bool
+
+@dataclass
+class CandidatePeptideDM(CandidatePeptide):
+    deep_match_score: float
+
+
+@dataclass
+class ScanPSM:
+    scan_id: str
+    retrieved_peptide: CandidatePeptide
+    location_in_file: int
+
+
+@dataclass
+class Scan:
+    scan_id: str
+    retrieved_peptides: list
 
 
 class BaseParser(ABC):
@@ -341,10 +369,45 @@ class InferenceParser(BaseParser):
 
     def __init__(self, spectrum_file: str):
         super(InferenceParser, self).__init__(spectrum_file)
-        self.batch_size = config.inference_batch_size
 
-    def test_set_iterator(self):
-        pass
+    def test_set_iterator(self, batch_size: int=config.inference_batch_size):
+        scans = list(self.spectrum_location_dict.keys())
+        total_num_batch = len(self.spectrum_location_dict) // batch_size
+        for i, batched_scans in enumerate(chunks(scans, batch_size)):
+            # np arrays for tensorflow
+            input_spectrum = []
+            sequence = []
+            sequence_length = []
+            ion_location_index = []
+            # data structures for fdr
+            scans_list = []
+            for scan_id in batched_scans:
+                mz_list, intensity_list, sorted_candidate_list = self.get_scan(scan_id)
+
+                valid_candidate_list = []
+                spectrum = cython_func.process_spectrum(mz_list, intensity_list)
+                for cp in sorted_candidate_list:
+                    peptide, unknown_mod = BaseParser.parse_raw_sequence(cp.peptide_str)
+                    if unknown_mod:
+                        continue
+                    peptide_sequence, peptide_length, peptide_location_index = self.get_peptide_features(peptide)
+                    valid_candidate_list.append(cp)
+                    input_spectrum.append(spectrum)
+                    sequence.append(peptide_sequence)
+                    sequence_length.append(peptide_length)
+                    ion_location_index.append(peptide_location_index)
+                scan = Scan(scan_id=scan_id, retrieved_peptides=valid_candidate_list)
+                scans_list.append(scan)
+            input_spectrum = np.array(input_spectrum, np.float32)
+            sequence = np.array(sequence, np.int64)
+            sequence_length = np.array(sequence_length, np.int64)
+            ion_location_index = np.array(ion_location_index, np.int64)
+            logger.info(f"processed {i}/{total_num_batch} batch")
+            yield input_spectrum, sequence, sequence_length, ion_location_index, scans_list
+
+
+
+
 
 
 def tf_decode_reshape(x, dtype, shape: tuple):
