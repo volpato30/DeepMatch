@@ -175,9 +175,16 @@ def deep_match_scoring(aa_sequence, aa_sequence_length, ion_location_index, inpu
 
     # get spectral representation
     location_shape = tf.shape(ion_location_index)
-    resized_location = tf.reshape(ion_location_index, shape=(location_shape[0], location_shape[1] * location_shape[2]))
-    resized_net = tf.reshape(net, shape=(location_shape[0], location_shape[1] * location_shape[2],
-                                         config.spectral_hidden_dimension))
+    resized_location = tf.reshape(ion_location_index,
+                                  shape=(location_shape[0],
+                                         (config.peptide_max_length - 1) * config.num_ion_combination
+                                         )
+                                  )
+    resized_net = tf.reshape(net, shape=(location_shape[0],
+                                         (config.peptide_max_length - 1) * config.num_ion_combination,
+                                         config.spectral_hidden_dimension
+                                         )
+                             )
     theoretical_spectrum_shape = tf.stack([tf.cast(location_shape[0], tf.int64),
                                            config.M,
                                            config.spectral_hidden_dimension])

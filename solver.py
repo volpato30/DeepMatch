@@ -40,8 +40,7 @@ class Solver(object):
                                         self.keep_prob,
                                         reuse=True)
         pos_target = tf.ones_like(pos_logits, dtype=tf.float32)
-        #neg_target = tf.zeros_like(neg_logits, dtype=tf.float32)
-        neg_target = tf.ones_like(neg_logits, dtype=tf.float32)
+        neg_target = tf.zeros_like(neg_logits, dtype=tf.float32)
         logits = tf.concat((pos_logits, neg_logits), axis=0)
         target = tf.concat((pos_target, neg_target), axis=0)
 
