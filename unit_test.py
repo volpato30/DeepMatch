@@ -22,7 +22,7 @@ class TestCythonFunctions(unittest.TestCase):
         # b, a, y
         assert config.delta_M == 0.5
         # the expected_result is computed under the assumption that delta_M is 0.5
-        expected_result = [202, 165, 167, 146, 110, 111, 1802, 1765, 1767]
+        expected_result = [202, 165, 167, 146, 110, 111, 1838, 1802, 1803]
         result_index = cython_func.get_ions_mz_index(peptide_mass, prefix_mass)
         for i, target in enumerate(expected_result):
             self.assertEqual(result_index[i], target, msg=f"left: {result_index[i]} not equal to "
@@ -204,12 +204,13 @@ class TestReader(unittest.TestCase):
 
             self.assertEqual(first_dp["pos_ion_location_index"].shape,
                              (1, config.peptide_max_length - 1, config.num_ion_combination))
-            expected_array = np.array([258, 222, 224, 202, 166, 168, 1839, 1803, 1804, 130, 112,
-                                       113, 102, 84, 85, 920, 902, 903], dtype=np.int64)
+
+            expected_array = np.array([258, 222, 224, 202, 166, 168, 1875, 1839, 1841, 130, 112,
+                                       113, 102, 84, 85, 938, 920, 921], dtype=np.int64)
             self.assertTrue(np.all(expected_array == first_dp["pos_ion_location_index"][0][0]))
 
-            neg_expected_array = np.array([372, 336, 338, 316, 280, 282, 1724, 1688, 1690, 187, 169,
-                                           170, 159, 141, 142, 863, 845, 846], dtype=np.int64)
+            neg_expected_array = np.array([372, 336, 338, 316, 280, 282, 1761, 1724, 1726, 187, 169,
+                                           170, 159, 141, 142, 881, 863, 864], dtype=np.int64)
             self.assertTrue(np.all(neg_expected_array == first_dp["neg_ion_location_index"][0][1]))
 
 

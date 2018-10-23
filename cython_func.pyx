@@ -11,18 +11,19 @@ cdef float mass_H2O = config.mass_H2O
 cdef float mass_NH3 = config.mass_NH3
 cdef float mass_H = config.mass_H
 cdef float mass_CO = config.mass_CO
+cdef float mass_C_terminus = config.mass_C_terminus
 
 def get_ions_mz_index(float peptide_mass, float prefix_mass):
     """
     if the peptide_mass and prefix_mass are properly feed(from real peptides) then the output should always be positive
-    :param peptide_mass: the total (neutral) mass of the peptide
+    :param peptide_mass: the sum of amino acid mass of the peptide
     :param prefix_mass: the accumulated (neutral) mass of AAs from the left hand side
     :return: a length 18 vector, represent the possible 18 combination of ions locations.
         (a,b,y) x (charge 1, charge 2) x (0, -H2O, -NH3)
     """
     b_ion_mass = prefix_mass + mass_H
     a_ion_mass = b_ion_mass - mass_CO
-    y_ion_mass = peptide_mass - prefix_mass + mass_H
+    y_ion_mass = peptide_mass - prefix_mass + mass_H + mass_C_terminus + mass_H
 
     # b-ions
     b_H2O = b_ion_mass - mass_H2O
