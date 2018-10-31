@@ -117,10 +117,12 @@ mass_ID = [mass_AA[vocab_reverse[x]] for x in range(vocab_size)]
 mass_AA_min = mass_AA["G"] # 57.02146
 
 save_dir = './chkpoint'
-num_epochs = 20
+num_epochs = 50
 
 num_neg_candidates = 4
 
+batch_size = 16
+inference_batch_size = 32
 
 fdr_threshold = 0.005
 # train, valid, test file path
@@ -135,11 +137,11 @@ valid_record_path = './data/valid.tfrecord'
 # piecewise constant learn rate
 boundaries = [500000]
 values = [FLAGS.init_lr, 1e-4]
+# linear cosine learn rate decay
+init_lr = FLAGS.init_lr
+lr_decay_steps = num_epochs * 300000 // batch_size
 
 keep_prob = 0.8
-
-batch_size = 16
-inference_batch_size = 32
 
 num_processes = 10
 

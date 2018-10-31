@@ -112,17 +112,17 @@ if __name__ == "__main__":
     }
     logging.config.dictConfig(d)
 
-    parser = InferenceParser("/home/rui/work/DeepMatch/data/psm-training-mm15_B.txt")
+    parser = InferenceParser("/home/rui/work/DeepMatch/data/hla_patient15_all_fractions/psm-training-mm15.txt")
     raw_scan_list = []
     for scan_id, location in parser.spectrum_location_dict.items():
         _, _, cp_list = parser.get_scan(scan_id)
         scan = ScanPSM(scan_id=scan_id, retrieved_peptide=cp_list[0], location_in_file=location)
         raw_scan_list.append(scan)
-    train_scan_list, test_scan_list = nodup_split(raw_scan_list, p=np.array([0.9, 0.1]))
+    train_scan_list, test_scan_list = nodup_split(raw_scan_list, p=np.array([0.95, 0.05]))
     write_scans(test_scan_list, parser.input_spectrum_handle, config.test_file)
 
     scan_list = _filter_by_fdr(train_scan_list, config.fdr_threshold)
-    train_list, valid_list = nodup_split(scan_list, p=np.array([0.9, 0.1]))
+    train_list, valid_list = nodup_split(scan_list, p=np.array([0.95, 0.05]))
     logging.info(f"train: {len(train_list)}\tvalid: {len(valid_list)}\ttest(not filtered): {len(test_scan_list)}")
     write_scans(train_list, parser.input_spectrum_handle, config.train_file)
     write_scans(valid_list, parser.input_spectrum_handle, config.valid_file)

@@ -10,6 +10,14 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+def gelu_fast(_x):
+    return 0.5 * _x * (1 + tf.tanh(tf.sqrt(2 / np.pi) * (_x + 0.044715 * tf.pow(_x, 3))))
+
+
+# activation_func = tf.nn.relu
+activation_func = gelu_fast
+
+
 def bi_rnn(x, sequence_length, n_hidden, n_steps, reuse):
     """ helper function for building the bidirectional lstm
     :param x: [batch, n_steps, d] input tensor, float32
@@ -47,57 +55,57 @@ def vgg_1d(input_tensor, reuse=None):
     :return:
     """
     net = layers.conv1d(input_tensor, config.spectral_hidden_dimension, kernel_size=7, strides=2,
-                        padding='same', activation=tf.nn.relu, kernel_regularizer=kernel_regularizer, name="conv11",
+                        padding='same', activation=activation_func, kernel_regularizer=kernel_regularizer, name="conv11",
                         reuse=reuse)
     net = layers.conv1d(net, config.spectral_hidden_dimension, kernel_size=3, strides=1,
-                        padding='same', activation=tf.nn.relu, kernel_regularizer=kernel_regularizer, name="conv12",
+                        padding='same', activation=activation_func, kernel_regularizer=kernel_regularizer, name="conv12",
                         reuse=reuse)
     net = layers.conv1d(net, config.spectral_hidden_dimension, kernel_size=3, strides=1,
-                        padding='same', activation=tf.nn.relu, kernel_regularizer=kernel_regularizer, name="conv13",
+                        padding='same', activation=activation_func, kernel_regularizer=kernel_regularizer, name="conv13",
                         reuse=reuse)
     # [2000 64]
 
     net = layers.conv1d(net, 2 * config.spectral_hidden_dimension, kernel_size=3, strides=2,
-                        padding='same', activation=tf.nn.relu, kernel_regularizer=kernel_regularizer, name="conv21",
+                        padding='same', activation=activation_func, kernel_regularizer=kernel_regularizer, name="conv21",
                         reuse=reuse)
     net = layers.conv1d(net, 2 * config.spectral_hidden_dimension, kernel_size=3, strides=1,
-                        padding='same', activation=tf.nn.relu, kernel_regularizer=kernel_regularizer, name="conv22",
+                        padding='same', activation=activation_func, kernel_regularizer=kernel_regularizer, name="conv22",
                         reuse=reuse)
     net = layers.conv1d(net, 2 * config.spectral_hidden_dimension, kernel_size=3, strides=1,
-                        padding='same', activation=tf.nn.relu, kernel_regularizer=kernel_regularizer, name="conv23",
+                        padding='same', activation=activation_func, kernel_regularizer=kernel_regularizer, name="conv23",
                         reuse=reuse)
     # [1000, 128], 0.15 params
 
     net = layers.conv1d(net, 4 * config.spectral_hidden_dimension, kernel_size=3, strides=2,
-                        padding='same', activation=tf.nn.relu, kernel_regularizer=kernel_regularizer, name="conv31",
+                        padding='same', activation=activation_func, kernel_regularizer=kernel_regularizer, name="conv31",
                         reuse=reuse)
     net = layers.conv1d(net, 4 * config.spectral_hidden_dimension, kernel_size=3, strides=1,
-                        padding='same', activation=tf.nn.relu, kernel_regularizer=kernel_regularizer, name="conv32",
+                        padding='same', activation=activation_func, kernel_regularizer=kernel_regularizer, name="conv32",
                         reuse=reuse)
     net = layers.conv1d(net, 4 * config.spectral_hidden_dimension, kernel_size=3, strides=1,
-                        padding='same', activation=tf.nn.relu, kernel_regularizer=kernel_regularizer, name="conv33",
+                        padding='same', activation=activation_func, kernel_regularizer=kernel_regularizer, name="conv33",
                         reuse=reuse)
     # [500, 256], 0.6M params
 
     net = layers.conv1d(net, 4 * config.spectral_hidden_dimension, kernel_size=3, strides=2,
-                        padding='same', activation=tf.nn.relu, kernel_regularizer=kernel_regularizer, name="conv41",
+                        padding='same', activation=activation_func, kernel_regularizer=kernel_regularizer, name="conv41",
                         reuse=reuse)
     net = layers.conv1d(net, 4 * config.spectral_hidden_dimension, kernel_size=3, strides=1,
-                        padding='same', activation=tf.nn.relu, kernel_regularizer=kernel_regularizer, name="conv42",
+                        padding='same', activation=activation_func, kernel_regularizer=kernel_regularizer, name="conv42",
                         reuse=reuse)
     net = layers.conv1d(net, 4 * config.spectral_hidden_dimension, kernel_size=3, strides=1,
-                        padding='same', activation=tf.nn.relu, kernel_regularizer=kernel_regularizer, name="conv43",
+                        padding='same', activation=activation_func, kernel_regularizer=kernel_regularizer, name="conv43",
                         reuse=reuse)
     # [250, 256], 0.6M
 
     net = layers.conv1d(net, 4 * config.spectral_hidden_dimension, kernel_size=3, strides=2,
-                        padding='same', activation=tf.nn.relu, kernel_regularizer=kernel_regularizer, name="conv51",
+                        padding='same', activation=activation_func, kernel_regularizer=kernel_regularizer, name="conv51",
                         reuse=reuse)
     net = layers.conv1d(net, 4 * config.spectral_hidden_dimension, kernel_size=3, strides=1,
-                        padding='same', activation=tf.nn.relu, kernel_regularizer=kernel_regularizer, name="conv52",
+                        padding='same', activation=activation_func, kernel_regularizer=kernel_regularizer, name="conv52",
                         reuse=reuse)
     net = layers.conv1d(net, 4 * config.spectral_hidden_dimension, kernel_size=3, strides=1,
-                        padding='same', activation=tf.nn.relu, kernel_regularizer=kernel_regularizer, name="conv53",
+                        padding='same', activation=activation_func, kernel_regularizer=kernel_regularizer, name="conv53",
                         reuse=reuse)
     # [125, 256], 0.6M
 
@@ -177,7 +185,7 @@ def deep_match_scoring(aa_sequence, aa_sequence_length, ion_location_index, inpu
     net = net[:, 1:-1, :]
 
     with tf.variable_scope('spectral_transform', reuse=reuse):
-        net = layers.dense(net, config.num_ion_combination * config.spectral_hidden_dimension, activation=tf.nn.relu,
+        net = layers.dense(net, config.num_ion_combination * config.spectral_hidden_dimension, activation=activation_func,
                            kernel_regularizer=kernel_regularizer)
     logger.info('hidden output shape:')
     logger.info(net.get_shape())

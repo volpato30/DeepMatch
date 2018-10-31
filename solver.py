@@ -21,7 +21,13 @@ class Solver(object):
         self.keep_prob = tf.placeholder(tf.float32, shape=(), name='keep_prob_placeholder')
 
         self.global_step = tf.train.get_or_create_global_step()
-        self.learn_rate = tf.train.piecewise_constant(self.global_step, config.boundaries, config.values)
+        # piecewise constant
+        # self.learn_rate = tf.train.piecewise_constant(self.global_step, config.boundaries, config.values)
+
+        # liner cosine decay
+        self.learn_rate = tf.train.linear_cosine_decay(config.init_lr, self.global_step,
+                                                     config.lr_decay_steps, beta=0.005)
+
         self.opt = tf.train.AdamOptimizer(self.learn_rate)
 
         next_element, self.training_init_op, self.validation_init_op = prepare_dataset_iterators(batch_size=64)

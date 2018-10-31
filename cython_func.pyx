@@ -55,7 +55,7 @@ def get_ions_mz_index(float peptide_mass, float prefix_mass):
     charge2_ions_mz = (charge1_ions_mz + mass_H) / 2
     ions_mz = np.concatenate((charge1_ions_mz, charge2_ions_mz))  # length 18 1-d array that stores the mz value
 
-    ions_index = np.floor(ions_mz / delta_M).astype(np.int32)  # the output can be negative or greater than M, masking in tensorflow graph
+    ions_index = np.floor(ions_mz / delta_M).astype(np.int32)  # the output can be greater than M, masking in tensorflow graph
 
     return ions_index
 
