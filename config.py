@@ -13,6 +13,15 @@ tf.app.flags.DEFINE_integer("H",
 tf.app.flags.DEFINE_float("init_lr",
                           1e-3,
                           "initial learning rate")
+tf.app.flags.DEFINE_string("optimizer",
+                           "adam",
+                           "optimizer to use.")
+tf.app.flags.DEFINE_string("activation",
+                           "relu",
+                           "activatino to use")
+tf.app.flags.DEFINE_boolean("linear_cosine",
+                            True,
+                            "use linear cosine lr decay")
 tf.app.flags.DEFINE_string("mode",
                            "train",
                            "mode for the main.py")
@@ -139,7 +148,7 @@ boundaries = [500000]
 values = [FLAGS.init_lr, 1e-4]
 # linear cosine learn rate decay
 init_lr = FLAGS.init_lr
-lr_decay_steps = num_epochs * 300000 // batch_size
+lr_decay_steps = num_epochs // 2 * 300000 // batch_size
 
 keep_prob = 0.8
 

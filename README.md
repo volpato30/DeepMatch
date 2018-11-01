@@ -33,3 +33,10 @@ make prep
 ~~~
 make infer
 ~~~
+
+## hyperparameters
+a set of good hyper parameter
+
+~~~
+python main.py --init_lr 0.1 --optimizer sgd --activation relu --mode train
+~~~

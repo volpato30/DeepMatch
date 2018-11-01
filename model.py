@@ -10,12 +10,16 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def gelu_fast(_x):
-    return 0.5 * _x * (1 + tf.tanh(tf.sqrt(2 / np.pi) * (_x + 0.044715 * tf.pow(_x, 3))))
+def silu(_x):
+    return _x * tf.sigmoid(_x)
 
 
-# activation_func = tf.nn.relu
-activation_func = gelu_fast
+if config.FLAGS.activation == 'relu':
+    activation_func = tf.nn.relu
+elif config.FLAGS.activation == 'silu':
+    activation_func = silu
+else:
+    raise ValueError("activation should be relu or silu")
 
 
 def bi_rnn(x, sequence_length, n_hidden, n_steps, reuse):

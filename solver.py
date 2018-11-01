@@ -21,14 +21,23 @@ class Solver(object):
         self.keep_prob = tf.placeholder(tf.float32, shape=(), name='keep_prob_placeholder')
 
         self.global_step = tf.train.get_or_create_global_step()
-        # piecewise constant
-        # self.learn_rate = tf.train.piecewise_constant(self.global_step, config.boundaries, config.values)
 
-        # liner cosine decay
-        self.learn_rate = tf.train.linear_cosine_decay(config.init_lr, self.global_step,
-                                                     config.lr_decay_steps, beta=0.005)
+        if config.FLAGS.linear_cosine:
+            # liner cosine decay
+            self.learn_rate = tf.train.linear_cosine_decay(config.init_lr, self.global_step,
+                                                           config.lr_decay_steps, beta=0.005)
+        else:
+            # piecewise constant
+            self.learn_rate = tf.train.piecewise_constant(self.global_step, config.boundaries, config.values)
 
-        self.opt = tf.train.AdamOptimizer(self.learn_rate)
+        if config.FLAGS.optimizer == 'adam':
+            self.opt = tf.train.AdamOptimizer(self.learn_rate)
+        elif config.FLAGS.optimizer == 'sgd':
+            self.opt = tf.train.GradientDescentOptimizer(self.learn_rate)
+        elif config.FLAGS.optimizer == 'momentum':
+            self.opt = tf.train.MomentumOptimizer(self.learn_rate, 0.95)
+        else:
+            raise ValueError('optimizer should be adam sgd or momentum')
 
         next_element, self.training_init_op, self.validation_init_op = prepare_dataset_iterators(batch_size=64)
 
