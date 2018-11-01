@@ -87,7 +87,7 @@ class Solver(object):
         gradients = tf.gradients(total_loss, params)
         clipped_gradients, norm = tf.clip_by_global_norm(
             gradients,
-            1.0)
+            config.grad_clip)
         tf.summary.scalar("gradient_global_norm", norm)
         self.train_op = self.opt.apply_gradients(
             zip(clipped_gradients, params),

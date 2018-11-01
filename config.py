@@ -134,6 +134,8 @@ batch_size = 16
 inference_batch_size = 32
 summary_steps = 50
 
+grad_clip = 1.0
+
 fdr_threshold = 0.005
 # train, valid, test file path
 train_file = './data/train_scans.txt'
@@ -156,3 +158,4 @@ keep_prob = 0.8
 num_processes = 10
 
 neg_sample_score_threshold = 0.95
+histo_summary_flag = False

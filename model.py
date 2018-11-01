@@ -38,9 +38,9 @@ def bi_rnn(x, sequence_length, n_hidden, n_steps, reuse):
 
     # Define lstm cells with tensorflow
     # Forward direction cell
-    lstm_fw_cell = rnn.BasicLSTMCell(n_hidden, forget_bias=1.0, reuse=reuse)
+    lstm_fw_cell = tf.nn.rnn_cell.LSTMCell(n_hidden, forget_bias=1.0, reuse=reuse)
     # Backward direction cell
-    lstm_bw_cell = rnn.BasicLSTMCell(n_hidden, forget_bias=1.0, reuse=reuse)
+    lstm_bw_cell = tf.nn.rnn_cell.LSTMCell(n_hidden, forget_bias=1.0, reuse=reuse)
     # Get lstm cell output
     outputs, forward_final_state, backward_final_state = rnn.static_bidirectional_rnn(lstm_fw_cell, lstm_bw_cell, x,
                                                                                       dtype=tf.float32,
@@ -68,7 +68,7 @@ def vgg_1d(input_tensor, initializer=tf.initializers.he_normal(), reuse=None):
     net = layers.conv1d(net, config.spectral_hidden_dimension, kernel_size=3, strides=1,
                         padding='same', kernel_initializer=initializer, activation=activation_func, kernel_regularizer=kernel_regularizer, name="conv13",
                         reuse=reuse)
-    if not reuse:
+    if (not reuse) and config.histo_summary_flag:
         tf.summary.histogram("output_conv13", net)
     # [2000 64]
 
@@ -81,7 +81,7 @@ def vgg_1d(input_tensor, initializer=tf.initializers.he_normal(), reuse=None):
     net = layers.conv1d(net, 2 * config.spectral_hidden_dimension, kernel_size=3, strides=1,
                         padding='same', kernel_initializer=initializer, activation=activation_func, kernel_regularizer=kernel_regularizer, name="conv23",
                         reuse=reuse)
-    if not reuse:
+    if (not reuse) and config.histo_summary_flag:
         tf.summary.histogram("output_conv23", net)
     # [1000, 128], 0.15 params
 
@@ -94,7 +94,7 @@ def vgg_1d(input_tensor, initializer=tf.initializers.he_normal(), reuse=None):
     net = layers.conv1d(net, 4 * config.spectral_hidden_dimension, kernel_size=3, strides=1,
                         padding='same', kernel_initializer=initializer, activation=activation_func, kernel_regularizer=kernel_regularizer, name="conv33",
                         reuse=reuse)
-    if not reuse:
+    if (not reuse) and config.histo_summary_flag:
         tf.summary.histogram("output_conv33", net)
     # [500, 256], 0.6M params
 
@@ -107,7 +107,7 @@ def vgg_1d(input_tensor, initializer=tf.initializers.he_normal(), reuse=None):
     net = layers.conv1d(net, 4 * config.spectral_hidden_dimension, kernel_size=3, strides=1,
                         padding='same', kernel_initializer=initializer, activation=activation_func, kernel_regularizer=kernel_regularizer, name="conv43",
                         reuse=reuse)
-    if not reuse:
+    if (not reuse) and config.histo_summary_flag:
         tf.summary.histogram("output_conv43", net)
     # [250, 256], 0.6M
 
@@ -120,7 +120,7 @@ def vgg_1d(input_tensor, initializer=tf.initializers.he_normal(), reuse=None):
     net = layers.conv1d(net, 4 * config.spectral_hidden_dimension, kernel_size=3, strides=1,
                         padding='same', kernel_initializer=initializer, activation=activation_func, kernel_regularizer=kernel_regularizer, name="conv53",
                         reuse=reuse)
-    if not reuse:
+    if (not reuse) and config.histo_summary_flag:
         tf.summary.histogram("output_conv53", net)
     # [125, 256], 0.6M
 
@@ -202,7 +202,7 @@ def deep_match_scoring(aa_sequence, aa_sequence_length, ion_location_index, inpu
     net = tf.concat((first_part, second_part), axis=2)
     net = net[:, 1:-1, :]
 
-    if not reuse:
+    if (not reuse) and config.histo_summary_flag:
         tf.summary.histogram("output_of_lstm", net)
 
     with tf.variable_scope('spectral_transform', reuse=reuse):
@@ -210,9 +210,9 @@ def deep_match_scoring(aa_sequence, aa_sequence_length, ion_location_index, inpu
                            kernel_initializer=initializer,
                            activation=activation_func,
                            kernel_regularizer=kernel_regularizer)
-        if not reuse:
-            # add summary operation when first call
-            tf.summary.histogram("output_after_spectral_transform", net)
+    if (not reuse) and config.histo_summary_flag:
+        # add summary operation when first call
+        tf.summary.histogram("output_after_spectral_transform", net)
 
     logger.info('hidden output shape:')
     logger.info(net.get_shape())
@@ -242,7 +242,7 @@ def deep_match_scoring(aa_sequence, aa_sequence_length, ion_location_index, inpu
 
     theoretical_spectrum = batch_scatter(indices=resized_location, updates=resized_net,
                                          shape=theoretical_spectrum_shape, name='batch_scatter')
-    if not reuse:
+    if (not reuse) and config.histo_summary_flag:
         tf.summary.histogram("theoretical_spectrum", theoretical_spectrum)
 
     logger.info('theoretical_spectrum shape:')
