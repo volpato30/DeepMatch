@@ -114,7 +114,8 @@ def vgg_1d(input_tensor, reuse=None):
     # [125, 256], 0.6M
 
     # finally a fully connected layer
-    net = layers.conv1d(net, 1, kernel_size=config.M // 32, strides=1,
+    k_size = net.get_shape()[1]
+    net = layers.conv1d(net, 1, kernel_size=(k_size,), strides=1,
                         padding='valid', activation=None, kernel_regularizer=kernel_regularizer, name="conv_final",
                         reuse=reuse)
     logits = tf.squeeze(net, axis=[1, 2])

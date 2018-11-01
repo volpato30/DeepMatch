@@ -33,10 +33,10 @@ mode = FLAGS.mode
 peptide_max_length = 15
 num_ion_combination = 18
 # M should be dividable by 32
-M = 4000  # contrast to the original paper, we let the discretized spectrum start from 0
-delta_M = 0.5
+M = 10000  # contrast to the original paper, we let the discretized spectrum start from 0
+delta_M = 0.2
+resolution = 5
 max_mz = int(np.ceil(M * delta_M))
-resolution = 2
 
 assert delta_M * resolution == 1
 
@@ -140,8 +140,8 @@ valid_file = './data/valid_scans.txt'
 test_file = './data/test_scans.txt'
 
 # tfrecord path
-train_record_path = './data/train.tfrecord'
-valid_record_path = './data/valid.tfrecord'
+train_record_path = f'./data/train_M{M}.tfrecord'
+valid_record_path = f'./data/valid_M{M}.tfrecord'
 
 # piecewise constant learn rate
 boundaries = [500000]
