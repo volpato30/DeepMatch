@@ -21,7 +21,7 @@ test: build
 .PHONY: train
 train:
 	rm -rf chkpoint/*
-	python main.py  --A $(A) --F $(F) --H $(H) --init_lr $(init_lr) --optimizer momentum --activation relu --mode train
+	python main.py  --A $(A) --F $(F) --H $(H) --init_lr $(init_lr) --optimizer sgd --activation relu --mode train
 
 .PHONY: prep
 prep:
