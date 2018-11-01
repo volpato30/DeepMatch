@@ -33,9 +33,9 @@ mode = FLAGS.mode
 peptide_max_length = 15
 num_ion_combination = 18
 # M should be dividable by 32
-M = 10000  # contrast to the original paper, we let the discretized spectrum start from 0
-delta_M = 0.2
-resolution = 5
+M = 4000  # contrast to the original paper, we let the discretized spectrum start from 0
+delta_M = 0.5
+resolution = 2
 max_mz = int(np.ceil(M * delta_M))
 
 assert delta_M * resolution == 1
@@ -132,6 +132,7 @@ num_neg_candidates = 4
 
 batch_size = 16
 inference_batch_size = 32
+summary_steps = 50
 
 fdr_threshold = 0.005
 # train, valid, test file path

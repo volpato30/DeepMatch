@@ -52,71 +52,82 @@ def bi_rnn(x, sequence_length, n_hidden, n_steps, reuse):
 kernel_regularizer = tf.contrib.layers.l2_regularizer(config.weight_decay)
 
 
-def vgg_1d(input_tensor, reuse=None):
+def vgg_1d(input_tensor, initializer=tf.initializers.he_normal(), reuse=None):
     """
 
+    :param initializer:
     :param input_tensor: [batch_size, M, H]
     :return:
     """
     net = layers.conv1d(input_tensor, config.spectral_hidden_dimension, kernel_size=7, strides=2,
-                        padding='same', activation=activation_func, kernel_regularizer=kernel_regularizer, name="conv11",
+                        padding='same', kernel_initializer=initializer, activation=activation_func, kernel_regularizer=kernel_regularizer, name="conv11",
                         reuse=reuse)
     net = layers.conv1d(net, config.spectral_hidden_dimension, kernel_size=3, strides=1,
-                        padding='same', activation=activation_func, kernel_regularizer=kernel_regularizer, name="conv12",
+                        padding='same', kernel_initializer=initializer, activation=activation_func, kernel_regularizer=kernel_regularizer, name="conv12",
                         reuse=reuse)
     net = layers.conv1d(net, config.spectral_hidden_dimension, kernel_size=3, strides=1,
-                        padding='same', activation=activation_func, kernel_regularizer=kernel_regularizer, name="conv13",
+                        padding='same', kernel_initializer=initializer, activation=activation_func, kernel_regularizer=kernel_regularizer, name="conv13",
                         reuse=reuse)
+    if not reuse:
+        tf.summary.histogram("output_conv13", net)
     # [2000 64]
 
     net = layers.conv1d(net, 2 * config.spectral_hidden_dimension, kernel_size=3, strides=2,
-                        padding='same', activation=activation_func, kernel_regularizer=kernel_regularizer, name="conv21",
+                        padding='same', kernel_initializer=initializer, activation=activation_func, kernel_regularizer=kernel_regularizer, name="conv21",
                         reuse=reuse)
     net = layers.conv1d(net, 2 * config.spectral_hidden_dimension, kernel_size=3, strides=1,
-                        padding='same', activation=activation_func, kernel_regularizer=kernel_regularizer, name="conv22",
+                        padding='same', kernel_initializer=initializer, activation=activation_func, kernel_regularizer=kernel_regularizer, name="conv22",
                         reuse=reuse)
     net = layers.conv1d(net, 2 * config.spectral_hidden_dimension, kernel_size=3, strides=1,
-                        padding='same', activation=activation_func, kernel_regularizer=kernel_regularizer, name="conv23",
+                        padding='same', kernel_initializer=initializer, activation=activation_func, kernel_regularizer=kernel_regularizer, name="conv23",
                         reuse=reuse)
+    if not reuse:
+        tf.summary.histogram("output_conv23", net)
     # [1000, 128], 0.15 params
 
     net = layers.conv1d(net, 4 * config.spectral_hidden_dimension, kernel_size=3, strides=2,
-                        padding='same', activation=activation_func, kernel_regularizer=kernel_regularizer, name="conv31",
+                        padding='same', kernel_initializer=initializer, activation=activation_func, kernel_regularizer=kernel_regularizer, name="conv31",
                         reuse=reuse)
     net = layers.conv1d(net, 4 * config.spectral_hidden_dimension, kernel_size=3, strides=1,
-                        padding='same', activation=activation_func, kernel_regularizer=kernel_regularizer, name="conv32",
+                        padding='same', kernel_initializer=initializer, activation=activation_func, kernel_regularizer=kernel_regularizer, name="conv32",
                         reuse=reuse)
     net = layers.conv1d(net, 4 * config.spectral_hidden_dimension, kernel_size=3, strides=1,
-                        padding='same', activation=activation_func, kernel_regularizer=kernel_regularizer, name="conv33",
+                        padding='same', kernel_initializer=initializer, activation=activation_func, kernel_regularizer=kernel_regularizer, name="conv33",
                         reuse=reuse)
+    if not reuse:
+        tf.summary.histogram("output_conv33", net)
     # [500, 256], 0.6M params
 
     net = layers.conv1d(net, 4 * config.spectral_hidden_dimension, kernel_size=3, strides=2,
-                        padding='same', activation=activation_func, kernel_regularizer=kernel_regularizer, name="conv41",
+                        padding='same', kernel_initializer=initializer, activation=activation_func, kernel_regularizer=kernel_regularizer, name="conv41",
                         reuse=reuse)
     net = layers.conv1d(net, 4 * config.spectral_hidden_dimension, kernel_size=3, strides=1,
-                        padding='same', activation=activation_func, kernel_regularizer=kernel_regularizer, name="conv42",
+                        padding='same', kernel_initializer=initializer, activation=activation_func, kernel_regularizer=kernel_regularizer, name="conv42",
                         reuse=reuse)
     net = layers.conv1d(net, 4 * config.spectral_hidden_dimension, kernel_size=3, strides=1,
-                        padding='same', activation=activation_func, kernel_regularizer=kernel_regularizer, name="conv43",
+                        padding='same', kernel_initializer=initializer, activation=activation_func, kernel_regularizer=kernel_regularizer, name="conv43",
                         reuse=reuse)
+    if not reuse:
+        tf.summary.histogram("output_conv43", net)
     # [250, 256], 0.6M
 
     net = layers.conv1d(net, 4 * config.spectral_hidden_dimension, kernel_size=3, strides=2,
-                        padding='same', activation=activation_func, kernel_regularizer=kernel_regularizer, name="conv51",
+                        padding='same', kernel_initializer=initializer, activation=activation_func, kernel_regularizer=kernel_regularizer, name="conv51",
                         reuse=reuse)
     net = layers.conv1d(net, 4 * config.spectral_hidden_dimension, kernel_size=3, strides=1,
-                        padding='same', activation=activation_func, kernel_regularizer=kernel_regularizer, name="conv52",
+                        padding='same', kernel_initializer=initializer, activation=activation_func, kernel_regularizer=kernel_regularizer, name="conv52",
                         reuse=reuse)
     net = layers.conv1d(net, 4 * config.spectral_hidden_dimension, kernel_size=3, strides=1,
-                        padding='same', activation=activation_func, kernel_regularizer=kernel_regularizer, name="conv53",
+                        padding='same', kernel_initializer=initializer, activation=activation_func, kernel_regularizer=kernel_regularizer, name="conv53",
                         reuse=reuse)
+    if not reuse:
+        tf.summary.histogram("output_conv53", net)
     # [125, 256], 0.6M
 
     # finally a fully connected layer
     k_size = net.get_shape()[1]
     net = layers.conv1d(net, 1, kernel_size=(k_size,), strides=1,
-                        padding='valid', activation=None, kernel_regularizer=kernel_regularizer, name="conv_final",
+                        padding='valid', kernel_initializer=initializer, activation=None, kernel_regularizer=kernel_regularizer, name="conv_final",
                         reuse=reuse)
     logits = tf.squeeze(net, axis=[1, 2])
 
@@ -132,9 +143,11 @@ def simple_readout(input_tensor, reuse=None):
     pass
 
 
-def deep_match_scoring(aa_sequence, aa_sequence_length, ion_location_index, input_spectrum, keep_prob, reuse=None):
+def deep_match_scoring(aa_sequence, aa_sequence_length, ion_location_index, input_spectrum, keep_prob,
+                       initializer=tf.initializers.he_normal(), reuse=None):
     """
     build computation graph
+    :param initializer:
     :param aa_sequence: [batch, peptide_max_length]
     :param aa_sequence_length: [batch, 1]
     :param ion_location_index: notice the index can be negative or out of bound, need to process in the model
@@ -189,9 +202,18 @@ def deep_match_scoring(aa_sequence, aa_sequence_length, ion_location_index, inpu
     net = tf.concat((first_part, second_part), axis=2)
     net = net[:, 1:-1, :]
 
+    if not reuse:
+        tf.summary.histogram("output_of_lstm", net)
+
     with tf.variable_scope('spectral_transform', reuse=reuse):
-        net = layers.dense(net, config.num_ion_combination * config.spectral_hidden_dimension, activation=activation_func,
+        net = layers.dense(net, config.num_ion_combination * config.spectral_hidden_dimension,
+                           kernel_initializer=initializer,
+                           activation=activation_func,
                            kernel_regularizer=kernel_regularizer)
+        if not reuse:
+            # add summary operation when first call
+            tf.summary.histogram("output_after_spectral_transform", net)
+
     logger.info('hidden output shape:')
     logger.info(net.get_shape())
 
@@ -220,6 +242,8 @@ def deep_match_scoring(aa_sequence, aa_sequence_length, ion_location_index, inpu
 
     theoretical_spectrum = batch_scatter(indices=resized_location, updates=resized_net,
                                          shape=theoretical_spectrum_shape, name='batch_scatter')
+    if not reuse:
+        tf.summary.histogram("theoretical_spectrum", theoretical_spectrum)
 
     logger.info('theoretical_spectrum shape:')
     logger.info(theoretical_spectrum.get_shape())
@@ -229,5 +253,5 @@ def deep_match_scoring(aa_sequence, aa_sequence_length, ion_location_index, inpu
     combined_spectrum = tf.concat((theoretical_spectrum, input_spectrum), axis=-1)
 
     with tf.variable_scope('cnn_readout', reuse=reuse):
-        output_logits = vgg_1d(combined_spectrum, reuse)
+        output_logits = vgg_1d(combined_spectrum, initializer=initializer, reuse=reuse)
     return output_logits

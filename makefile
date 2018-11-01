@@ -1,6 +1,7 @@
 A=128
 F=256
 H=4
+init_lr=0.1
 
 .PHONY: clean
 clean:
@@ -20,7 +21,7 @@ test: build
 .PHONY: train
 train:
 	rm -rf chkpoint/*
-	python main.py --mode train --A $(A) --F $(F) --H $(H)
+	python main.py  --A $(A) --F $(F) --H $(H) --init_lr $(init_lr) --optimizer sgd --activation relu --mode train
 
 .PHONY: prep
 prep:

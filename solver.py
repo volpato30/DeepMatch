@@ -78,10 +78,23 @@ class Solver(object):
         tf.summary.scalar('train_accuracy', self.accuracy)
         tf.summary.histogram('pos_logits', pos_logits)
         tf.summary.histogram('neg_logits', neg_logits)
+        tf.summary.scalar("learn_rate", self.learn_rate)
 
         total_loss = self.ce_loss + self.weight_l2_norm
+
+        # gradient clipping
+        params = tf.trainable_variables()
+        gradients = tf.gradients(total_loss, params)
+        clipped_gradients, norm = tf.clip_by_global_norm(
+            gradients,
+            1.0)
+        tf.summary.scalar("gradient_global_norm", norm)
+        self.train_op = self.opt.apply_gradients(
+            zip(clipped_gradients, params),
+            global_step=self.global_step)
+
         # self.train_op = self.opt.minimize(self.ce_loss, global_step=self.global_step)
-        self.train_op = self.opt.minimize(total_loss, global_step=self.global_step)
+        # self.train_op = self.opt.minimize(total_loss, global_step=self.global_step)
         self.summary_op = tf.summary.merge_all()
 
         num_param = np.sum([np.prod(v.get_shape().as_list()) for v in tf.trainable_variables()])
@@ -99,6 +112,17 @@ class Solver(object):
         saver = tf.train.Saver(max_to_keep=1)
         init_op = tf.global_variables_initializer()
         with tf.Session() as sess:
+            first_round_writer = tf.summary.FileWriter(os.path.join(self.save_dir, "train_summary", "first_pass"),
+                                                       sess.graph)
+            sess.run(init_op)
+            sess.run(self.training_init_op)
+            summary = sess.run(self.summary_op, feed_dict={self.keep_prob: config.keep_prob})
+            first_round_writer.add_summary(summary, 1)
+            first_round_writer.flush()
+            logger.info("finished running the first pass through")
+            first_round_writer.close()
+
+        with tf.Session() as sess:
             train_writer = tf.summary.FileWriter(os.path.join(self.save_dir, 'train_summary'), sess.graph)
             sess.run(init_op)
             for epoch in range(1, config.num_epochs + 1):
@@ -108,7 +132,7 @@ class Solver(object):
                     try:
                         _, summary, gs = sess.run([self.train_op, self.summary_op, self.global_step],
                                                   feed_dict={self.keep_prob: config.keep_prob})
-                        if train_step % 10 == 0:
+                        if train_step % config.summary_steps == 0:
                             train_writer.add_summary(summary, gs)
                             train_writer.flush()
                         train_step += 1

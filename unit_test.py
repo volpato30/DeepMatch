@@ -19,26 +19,31 @@ class TestCythonFunctions(unittest.TestCase):
         peptide_mass = 1000.
         prefix_mass = 100.
 
-        # b, a, y
-        assert config.delta_M == 0.5
-        # the expected_result is computed under the assumption that delta_M is 0.5
-        expected_result = [202, 165, 167, 146, 110, 111, 1838, 1802, 1803]
-        result_index = cython_func.get_ions_mz_index(peptide_mass, prefix_mass)
-        for i, target in enumerate(expected_result):
-            self.assertEqual(result_index[i], target, msg=f"left: {result_index[i]} not equal to "
-                                                          f"right: {target}")
+        if config.M == 4000:
+            # b, a, y
+            assert config.delta_M == 0.5
+            # the expected_result is computed under the assumption that delta_M is 0.5
+            expected_result = [202, 165, 167, 146, 110, 111, 1838, 1802, 1803]
+            result_index = cython_func.get_ions_mz_index(peptide_mass, prefix_mass)
+            for i, target in enumerate(expected_result):
+                self.assertEqual(result_index[i], target, msg=f"left: {result_index[i]} not equal to "
+                                                              f"right: {target}")
+        else:
+            logger.warning(f"unit test should be run when M is 4000")
 
     def test_process_spectrum(self):
-        assert config.delta_M == 0.5
-        mz_list = [103.2, 209.5]
-        intensity_list = [100.0, 1000.0]
+        if config.M == 4000:
+            assert config.delta_M == 0.5
+            mz_list = [103.2, 209.5]
+            intensity_list = [100.0, 1000.0]
 
-        spectrum_holder = cython_func.process_spectrum(mz_list, intensity_list)
-        spectrum_holder_expected = np.zeros(config.M)
-        spectrum_holder_expected[206] = 1. / 11
-        spectrum_holder_expected[419] = 10. / 11
-
-        self.assert_(np.allclose(spectrum_holder_expected, spectrum_holder))
+            spectrum_holder = cython_func.process_spectrum(mz_list, intensity_list)
+            spectrum_holder_expected = np.zeros(config.M)
+            spectrum_holder_expected[206] = 1. / 11
+            spectrum_holder_expected[419] = 10. / 11
+            self.assert_(np.allclose(spectrum_holder_expected, spectrum_holder))
+        else:
+            logger.warning(f"unit test should be run when M is 4000")
 
     def test_config_aa_mass(self):
         self.assertAlmostEqual(config.mass_ID[config.vocab['K']], 128.09496)
@@ -165,6 +170,9 @@ class TestReader(unittest.TestCase):
         Integration test for converting to tfrecord and read from tfrecord
         :return:
         """
+        if config.M != 4000:
+            logger.warning(f"unit test should be run when M is 4000")
+            return
         dataset = make_dataset("./test_data/test_scans.tfrecord", batch_size=1, num_processes=1)
         iterator = tf.data.Iterator.from_structure(dataset.output_types, dataset.output_shapes)
         next_element = iterator.get_next()
